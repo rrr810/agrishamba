@@ -1,18 +1,16 @@
 /**
- * SokoShamba — Central configuration layer
- * ----------------------------------------
- * ONLY public / client-safe configuration belongs in this file.
+ * SokoShamba — Central configuration
  *
- * ⛔ NEVER place here:
- *   - SUPABASE_SERVICE_ROLE_KEY
- *   - PAYSTACK_SECRET_KEY  (sk_live_... / sk_test_...)
- *   - SMTP or email provider passwords
- *   - Private automation webhook secrets
+ * Only public configuration belongs here.
  *
- * Those live only in Supabase Edge Function secrets (server-side).
+ * Never put these values in this file:
+ * - Supabase service-role key
+ * - Paystack secret key
+ * - Gemini API key
+ * - SMTP passwords
+ * - Private webhook secrets
  */
 
-/* ============================================================ IDENTITY */
 export const APP = Object.freeze({
   name: 'SokoShamba',
   legalName: 'SokoShamba (Registration pending)',
@@ -31,17 +29,16 @@ export const APP = Object.freeze({
     role: 'Founder & CEO'
   },
 
-  liveUrl: 'https://sokoshamba1.netlify.app',
-  canonical: 'https://sokoshamba1.netlify.app/'
+  liveUrl: 'https://agrishamba.netlify.app',
+  canonical: 'https://agrishamba.netlify.app/'
 });
 
 /* ============================================================ SUPABASE */
+
 export const SUPABASE = {
-  // ✅ LIVE — Supabase project `wihsjgaqfpzrigofzfzb`
   url: 'https://wihsjgaqfpzrigofzfzb.supabase.co',
 
-  // Public anon key (JWT). Safe in browser code — every table has
-  // Row Level Security enabled. See supabase/schema.sql.
+  // Public Supabase anon key only.
   anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpaHNqZ2FxZnB6cmlnb2Z6ZnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4NDg5MTEsImV4cCI6MjEwMTQyNDkxMX0.DwdG_SDdhA5x_wflmKeuIhDoDtl6to539KydDnS3SH4',
 
   buckets: {
@@ -51,41 +48,54 @@ export const SUPABASE = {
 };
 
 /* ============================================================ PAYSTACK */
+
 export const PAYSTACK = {
-  // 🧪 TEST MODE — SokoShamba Paystack account (1954953).
-  // Account verification pending. Swap to pk_live_... once approved.
+  // Test key for the current SokoShamba Paystack account.
+  // Keep test mode on until Paystack approves the account.
   publicKey: 'pk_test_1cbb1ca7961fd0de2ef2546708bff531a2ecc3a9',
 
-  // 🔐 Supabase Edge Functions hold PAYSTACK_SECRET_KEY server-side
-  initializeEndpoint: 'https://wihsjgaqfpzrigofzfzb.supabase.co/functions/v1/paystack-initialize',
-  verifyEndpoint: 'https://wihsjgaqfpzrigofzfzb.supabase.co/functions/v1/paystack-verify',
+  initializeEndpoint:
+    'https://wihsjgaqfpzrigofzfzb.supabase.co/functions/v1/paystack-initialize',
+
+  verifyEndpoint:
+    'https://wihsjgaqfpzrigofzfzb.supabase.co/functions/v1/paystack-verify',
 
   currency: 'KES',
-  channels: ['mobile_money', 'card', 'bank_transfer'],
 
-  // true  = test-mode banner shown at checkout, no real money
-  // false = LIVE, real M-Pesa prompts and real KES deducted
+  channels: [
+    'mobile_money',
+    'card',
+    'bank_transfer'
+  ],
+
+  // true = test mode
+  // false = live mode after Paystack approval
   testMode: true,
 
-  // Paystack test numbers (shown as a hint while testMode is true)
   testMpesaSuccess: '0710000000',
   testMpesaFailure: '0710000001'
 };
 
 /* ========================================================== AUTOMATION */
+
 export const AUTOMATION = {
-  proxyEndpoint: 'https://wihsjgaqfpzrigofzfzb.supabase.co/functions/v1/automation-event',
+  proxyEndpoint:
+    'https://wihsjgaqfpzrigofzfzb.supabase.co/functions/v1/automation-event',
+
   enabled: false
 };
 
 /* =============================================================== MODE */
+
 export const MODE = {
   DEMO: 'demo',
   PRODUCTION: 'production'
 };
 
 export function getMode() {
-  return SUPABASE.url && SUPABASE.anonKey ? MODE.PRODUCTION : MODE.DEMO;
+  return SUPABASE.url && SUPABASE.anonKey
+    ? MODE.PRODUCTION
+    : MODE.DEMO;
 }
 
 export function isDemo() {
@@ -93,18 +103,59 @@ export function isDemo() {
 }
 
 /* ============================================================ COUNTIES */
+
 export const COUNTIES = [
-  'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet', 'Embu', 'Garissa',
-  'Homa Bay', 'Isiolo', 'Kajiado', 'Kakamega', 'Kericho', 'Kiambu', 'Kilifi',
-  'Kirinyaga', 'Kisii', 'Kisumu', 'Kitui', 'Kwale', 'Laikipia', 'Lamu',
-  'Machakos', 'Makueni', 'Mandera', 'Marsabit', 'Meru', 'Migori', 'Mombasa',
-  'Murang\u2019a', 'Nairobi', 'Nakuru', 'Nandi', 'Narok', 'Nyamira',
-  'Nyandarua', 'Nyeri', 'Samburu', 'Siaya', 'Taita-Taveta', 'Tana River',
-  'Tharaka-Nithi', 'Trans Nzoia', 'Turkana', 'Uasin Gishu', 'Vihiga',
-  'Wajir', 'West Pokot'
+  'Baringo',
+  'Bomet',
+  'Bungoma',
+  'Busia',
+  'Elgeyo-Marakwet',
+  'Embu',
+  'Garissa',
+  'Homa Bay',
+  'Isiolo',
+  'Kajiado',
+  'Kakamega',
+  'Kericho',
+  'Kiambu',
+  'Kilifi',
+  'Kirinyaga',
+  'Kisii',
+  'Kisumu',
+  'Kitui',
+  'Kwale',
+  'Laikipia',
+  'Lamu',
+  'Machakos',
+  'Makueni',
+  'Mandera',
+  'Marsabit',
+  'Meru',
+  'Migori',
+  'Mombasa',
+  'Muranga',
+  'Nairobi',
+  'Nakuru',
+  'Nandi',
+  'Narok',
+  'Nyamira',
+  'Nyandarua',
+  'Nyeri',
+  'Samburu',
+  'Siaya',
+  'Taita-Taveta',
+  'Tana River',
+  'Tharaka-Nithi',
+  'Trans Nzoia',
+  'Turkana',
+  'Uasin Gishu',
+  'Vihiga',
+  'Wajir',
+  'West Pokot'
 ];
 
 /* ========================================================== CATEGORIES */
+
 export const CATEGORIES = [
   { id: 'cereals', name: 'Cereals', icon: '🌾' },
   { id: 'vegetables', name: 'Vegetables', icon: '🥬' },
@@ -120,21 +171,59 @@ export const CATEGORIES = [
 ];
 
 /* =============================================================== UNITS */
+
 export const UNITS = [
-  'kg', '90kg bag', '50kg bag', 'crate', 'tray', 'litre',
-  'bunch', 'piece', 'head', 'tonne', 'acre', 'day'
+  'kg',
+  '90kg bag',
+  '50kg bag',
+  'crate',
+  'tray',
+  'litre',
+  'bunch',
+  'piece',
+  'head',
+  'tonne',
+  'acre',
+  'day'
 ];
 
 /* ======================================================= ACCOUNT TYPES */
+
 export const ACCOUNT_TYPES = [
-  { id: 'farmer',   label: 'Farmer',            icon: '🧑‍🌾', desc: 'Sell your produce, dairy, livestock or poultry directly to buyers.' },
-  { id: 'buyer',    label: 'Buyer',             icon: '🛒',   desc: 'Source produce directly from verified farmers and cooperatives.' },
-  { id: 'supplier', label: 'Supplier',          icon: '🏪',   desc: 'Sell seeds, fertilizer, animal feed and farm equipment.' },
-  { id: 'rider',    label: 'Rider / Transport', icon: '🚛',   desc: 'Offer boda-boda, pickup, lorry or refrigerated transport for produce.' },
-  { id: 'service',  label: 'Other Service',     icon: '🧰',   desc: 'Machinery hire, storage, veterinary, irrigation or consulting.' }
+  {
+    id: 'farmer',
+    label: 'Farmer',
+    icon: '🧑‍🌾',
+    desc: 'Sell your produce, dairy, livestock or poultry directly to buyers.'
+  },
+  {
+    id: 'buyer',
+    label: 'Buyer',
+    icon: '🛒',
+    desc: 'Source produce directly from verified farmers and cooperatives.'
+  },
+  {
+    id: 'supplier',
+    label: 'Supplier',
+    icon: '🏪',
+    desc: 'Sell seeds, fertilizer, animal feed and farm equipment.'
+  },
+  {
+    id: 'rider',
+    label: 'Rider / Transport',
+    icon: '🚛',
+    desc: 'Offer boda-boda, pickup, lorry or refrigerated transport for produce.'
+  },
+  {
+    id: 'service',
+    label: 'Other Service',
+    icon: '🧰',
+    desc: 'Machinery hire, storage, veterinary, irrigation or consulting.'
+  }
 ];
 
 /* ============================================================ STATUSES */
+
 export const ORDER_STATUSES = [
   'Pending',
   'Payment Received',
@@ -149,9 +238,15 @@ export const ORDER_STATUSES = [
   'Disputed'
 ];
 
-export const PAYMENT_STATUSES = ['Pending', 'Paid', 'Failed', 'Cancelled', 'Refunded'];
+export const PAYMENT_STATUSES = [
+  'Pending',
+  'Paid',
+  'Failed',
+  'Cancelled',
+  'Refunded'
+];
 
-/* ================================================= PRICING (fallbacks) */
-/** Primary pricing lives in js/pricing.js — these are legacy fallbacks. */
+/* ================================================= PRICING FALLBACKS */
+
 export const DELIVERY_FEE_BASE = 200;
 export const PLATFORM_FEE_RATE = 0.05;
