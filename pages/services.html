@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agricultural services — SokoShamba</title>
+<meta name="description" content="Find transport, storage, machinery, farm labour, veterinary, irrigation and consulting services across Kenya.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/forms.css"><link rel="stylesheet" href="../css/pages.css">
+<link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body data-nav="Services">
+<a class="skip-link" href="#main">Skip to main content</a>
+<div id="site-header"></div>
+<main id="main">
+  <section class="page-head">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a><span>/</span><span>Services</span></nav>
+      <h1>Agricultural services</h1>
+      <p>Transport, storage, machinery, labour, veterinary, irrigation, consulting and equipment rental from providers near you.</p>
+    </div>
+  </section>
+
+  <div class="container" style="padding-block:var(--sp-5) var(--sp-8)">
+    <div class="market-toolbar">
+      <div class="search-box"><label class="sr-only" for="svcSearch">Search services</label>
+        <input class="input" id="svcSearch" type="search" placeholder="Search tractor, cold transport, vet…"></div>
+      <div><label class="sr-only" for="typeFilter">Service type</label>
+        <select class="select" id="typeFilter"><option value="all">All service types</option></select></div>
+      <div><label class="sr-only" for="countyFilter">County</label>
+        <select class="select" id="countyFilter"><option value="all">All counties</option></select></div>
+    </div>
+    <div class="service-grid" id="serviceGrid" aria-live="polite"></div>
+
+    <section class="card card--pad mt-6" id="list-service">
+      <h2 style="font-size:var(--fs-md)">Are you a service provider?</h2>
+      <p class="muted small mt-2 mb-4">Add your service to the directory so farmers in your county can find and book you.</p>
+      <form id="serviceForm" novalidate>
+        <div class="grid-3">
+          <div class="field"><label for="svcName">Service name <span class="req">*</span></label>
+            <input class="input" id="svcName" name="name" placeholder="e.g. Tractor ploughing" required></div>
+          <div class="field"><label for="svcType">Type <span class="req">*</span></label>
+            <select class="select" id="svcType" name="type" required><option value="">Select type</option></select></div>
+          <div class="field"><label for="svcCounty">County <span class="req">*</span></label>
+            <select class="select" id="svcCounty" name="county" required><option value="">Select county</option></select></div>
+        </div>
+        <div class="grid-3">
+          <div class="field"><label for="svcLocation">Town / ward <span class="req">*</span></label>
+            <input class="input" id="svcLocation" name="location" placeholder="e.g. Ahero" required></div>
+          <div class="field"><label for="svcPrice">Price (KES) <span class="req">*</span></label>
+            <input class="input" id="svcPrice" name="price" type="number" min="1" placeholder="3500" required></div>
+          <div class="field"><label for="svcUnit">Charged per <span class="req">*</span></label>
+            <select class="select" id="svcUnit" name="unit" required>
+              <option value="">Select unit</option><option>acre</option><option>day</option><option>hour</option>
+              <option>km</option><option>trip</option><option>90kg bag</option><option>visit</option></select></div>
+        </div>
+        <div class="field"><label for="svcDesc">Description <span class="req">*</span></label>
+          <textarea class="textarea" id="svcDesc" name="description" placeholder="Equipment, capacity, coverage area, availability…" required></textarea></div>
+        <div class="form-actions"><button class="btn btn--primary" type="submit">Publish service</button></div>
+      </form>
+    </section>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script type="module" src="../js/app.js"></script>
+<script type="module" src="../js/services.js"></script>
+</body>
+</html>

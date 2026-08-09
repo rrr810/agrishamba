@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sell a product — SokoShamba</title>
+<meta name="description" content="List your produce, livestock, inputs or equipment for sale on SokoShamba.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/forms.css"><link rel="stylesheet" href="../css/dashboard.css">
+<link rel="stylesheet" href="../css/pages.css"><link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div id="site-header"></div>
+<main id="main">
+  <section class="page-head">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a><span>/</span><a href="dashboard.html">Dashboard</a><span>/</span><span>Sell</span></nav>
+      <h1 id="pageTitle">List a product</h1>
+      <p>Good photos, an honest description and accurate quantities get you more buyers.</p>
+    </div>
+  </section>
+
+  <div class="container" style="padding-block:var(--sp-5) var(--sp-8)">
+    <div class="cart-layout">
+      <form class="card card--pad" id="sellForm" novalidate>
+        <div id="formAlert" role="alert" aria-live="assertive"></div>
+
+        <fieldset class="mb-5">
+          <legend>Product information</legend>
+          <div class="field"><label for="name">Product name <span class="req">*</span></label>
+            <input class="input" id="name" name="name" placeholder="e.g. Grade 1 Dry Maize" required></div>
+          <div class="grid-2">
+            <div class="field"><label for="category">Category <span class="req">*</span></label>
+              <select class="select" id="category" name="category" required><option value="">Select category</option></select></div>
+            <div class="field"><label for="unit">Unit <span class="req">*</span></label>
+              <select class="select" id="unit" name="unit" required><option value="">Select unit</option></select></div>
+          </div>
+          <div class="field"><label for="description">Description <span class="req">*</span></label>
+            <textarea class="textarea" id="description" name="description" placeholder="Grading, moisture content, harvest date, packaging, minimum order…" required></textarea>
+            <p class="hint"><span id="descCount">0</span>/600 characters</p></div>
+        </fieldset>
+
+        <fieldset class="mb-5">
+          <legend>Pricing &amp; stock</legend>
+          <div class="grid-2">
+            <div class="field"><label for="price">Price per unit (KES) <span class="req">*</span></label>
+              <input class="input" id="price" name="price" type="number" min="1" inputmode="numeric" placeholder="4200" required></div>
+            <div class="field"><label for="quantity">Available quantity <span class="req">*</span></label>
+              <input class="input" id="quantity" name="quantity" type="number" min="1" inputmode="numeric" placeholder="180" required></div>
+          </div>
+        </fieldset>
+
+        <fieldset class="mb-5">
+          <legend>Location &amp; delivery</legend>
+          <div class="grid-2">
+            <div class="field"><label for="county">County <span class="req">*</span></label>
+              <select class="select" id="county" name="county" required><option value="">Select county</option></select></div>
+            <div class="field"><label for="subCounty">Sub-county</label>
+              <input class="input" id="subCounty" name="subCounty" placeholder="e.g. Moiben"></div>
+          </div>
+          <div class="field"><label for="location">Pickup location / landmark <span class="req">*</span></label>
+            <input class="input" id="location" name="location" placeholder="e.g. Moiben trading centre" required></div>
+          <div class="field"><label for="delivery">Delivery option <span class="req">*</span></label>
+            <select class="select" id="delivery" name="delivery" required>
+              <option value="">Select option</option>
+              <option>Buyer pickup only</option>
+              <option>Seller delivery + pickup</option>
+              <option>Seller delivery only</option>
+              <option>Buyer arranges transport</option>
+            </select></div>
+          <div class="field"><label for="contact">Preferred contact <span class="req">*</span></label>
+            <select class="select" id="contact" name="contact" required>
+              <option value="">Select preference</option>
+              <option>In-platform messages</option><option>Phone call</option><option>SMS</option><option>WhatsApp</option>
+            </select></div>
+        </fieldset>
+
+        <fieldset class="mb-5">
+          <legend>Product images</legend>
+          <label class="uploader" for="images" id="dropZone">
+            <div style="font-size:2rem" aria-hidden="true">📷</div>
+            <strong>Click to upload or drag images here</strong>
+            <p class="small">JPG or PNG, up to 5 images, 3MB each. The first image becomes the cover photo.</p>
+          </label>
+          <input type="file" id="images" accept="image/*" multiple class="sr-only">
+          <div class="thumb-grid" id="thumbs"></div>
+          <p class="hint">In production images upload to a Supabase Storage bucket and only the public URL is stored.</p>
+        </fieldset>
+
+        <div class="form-actions">
+          <button class="btn btn--primary btn--lg" type="submit">Publish listing</button>
+          <button class="btn btn--outline" type="button" id="saveDraft">Save as draft</button>
+          <button class="btn btn--ghost" type="reset" id="resetForm">Clear form</button>
+        </div>
+      </form>
+
+      <aside class="grid gap-4">
+        <section class="card card--pad">
+          <h2 style="font-size:var(--fs-md)" class="mb-3">Drafts</h2>
+          <div id="draftList"></div>
+        </section>
+        <section class="card card--pad">
+          <h2 style="font-size:var(--fs-md)" class="mb-3">My listings</h2>
+          <div id="myListings"></div>
+        </section>
+        <section class="card card--pad" style="background:var(--green-50);border-color:var(--green-100)">
+          <h2 style="font-size:var(--fs-base)" class="mb-2">Tips for better sales</h2>
+          <ul class="small" style="display:grid;gap:8px;color:var(--ink-700)">
+            <li>✓ Photograph produce in daylight against a clean background.</li>
+            <li>✓ State grading, moisture and packaging clearly.</li>
+            <li>✓ Keep quantity updated so buyers do not order stock you sold.</li>
+            <li>✓ Respond to enquiries within a few hours.</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script type="module" src="../js/app.js"></script>
+<script type="module" src="../js/pages/sell.js"></script>
+</body>
+</html>

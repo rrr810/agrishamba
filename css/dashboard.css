@@ -1,0 +1,62 @@
+/* Dashboard shell */
+.dash { display: grid; grid-template-columns: 252px 1fr; gap: var(--sp-5); align-items: start; padding: var(--sp-5) 0 var(--sp-8); }
+.dash-side {
+  position: sticky; top: calc(var(--header-h) + 16px); background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: var(--sp-3); box-shadow: var(--shadow-xs);
+}
+.dash-side__user { display: flex; gap: 10px; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.dash-side__user strong { display: block; font-size: var(--fs-sm); }
+.dash-side__user span { font-size: var(--fs-xs); color: var(--ink-500); text-transform: capitalize; }
+.dash-nav a {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm);
+  font-size: var(--fs-sm); color: var(--ink-700); font-weight: 550; transition: var(--transition);
+}
+.dash-nav a:hover { background: var(--green-50); color: var(--green-700); text-decoration: none; }
+.dash-nav a.active { background: var(--green-700); color: #fff; font-weight: 650; }
+.dash-nav .group-label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-400); padding: 12px 12px 6px; font-weight: 700; }
+.dash-main { min-width: 0; display: grid; gap: var(--sp-5); }
+.dash-header { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--sp-4); flex-wrap: wrap; }
+.dash-header h1 { font-size: var(--fs-xl); }
+
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4); }
+.stat {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: var(--sp-4) var(--sp-5); position: relative; overflow: hidden;
+}
+.stat::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--green-500); }
+.stat--gold::before { background: var(--gold-500); }
+.stat--info::before { background: var(--sky-600); }
+.stat--danger::before { background: var(--danger-500); }
+.stat__label { font-size: var(--fs-xs); color: var(--ink-500); text-transform: uppercase; letter-spacing: .07em; font-weight: 650; }
+.stat__value { font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: var(--ink-900); margin-top: 4px; }
+.stat__meta { font-size: var(--fs-xs); color: var(--ink-500); margin-top: 4px; }
+.quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.quick-action {
+  display: flex; flex-direction: column; gap: 6px; padding: var(--sp-4); border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink-800); transition: var(--transition);
+}
+.quick-action:hover { border-color: var(--green-500); background: var(--green-50); text-decoration: none; transform: translateY(-2px); }
+.quick-action span:first-child { font-size: 1.5rem; }
+.quick-action strong { font-size: var(--fs-sm); }
+.quick-action small { font-size: var(--fs-xs); color: var(--ink-500); }
+
+/* Simple CSS bar chart */
+.bars { display: flex; align-items: flex-end; gap: 10px; height: 180px; padding-top: 10px; }
+.bars__col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; height: 100%; }
+.bars__bar {
+  width: 100%; max-width: 42px; border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, var(--green-400), var(--green-600)); transition: height 500ms ease; min-height: 4px;
+}
+.bars__col small { font-size: 10px; color: var(--ink-500); }
+.list-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.list-row:last-child { border-bottom: 0; }
+.list-row__img { width: 46px; height: 46px; border-radius: var(--radius-sm); object-fit: cover; flex: none; background: var(--ink-100); }
+.list-row__main { min-width: 0; flex: 1; }
+.list-row__main strong { display: block; font-size: var(--fs-sm); }
+.list-row__main small { color: var(--ink-500); font-size: var(--fs-xs); }
+.dash-note {
+  background: var(--sky-100); border: 1px solid #c7e2f2; color: #12557f;
+  padding: 12px 14px; border-radius: var(--radius-sm); font-size: var(--fs-xs);
+}

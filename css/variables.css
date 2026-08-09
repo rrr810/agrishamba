@@ -1,0 +1,85 @@
+/* SokoShamba — design tokens */
+:root {
+  /* Brand: deep agricultural green + supporting neutrals */
+  --green-900: #06301c;
+  --green-800: #0b4429;
+  --green-700: #0f5132;
+  --green-600: #157347;
+  --green-500: #1f9d55;
+  --green-400: #2fb36a;
+  --green-300: #7bd6a4;
+  --green-100: #dff3e7;
+  --green-50:  #f1faf4;
+
+  --earth-700: #6b4a1f;
+  --earth-500: #b8863b;
+  --earth-200: #f0e2c8;
+
+  --gold-500: #d99e2b;
+  --sky-600: #1d6fa5;
+  --sky-100: #e2f0fa;
+
+  --danger-600: #b02a2a;
+  --danger-500: #d64545;
+  --danger-100: #fdecec;
+  --warn-600: #96650a;
+  --warn-500: #e0a12a;
+  --warn-100: #fdf3dd;
+  --ok-600: #157347;
+  --ok-100: #e2f5ea;
+  --info-600: #1d6fa5;
+
+  --ink-900: #101614;
+  --ink-800: #1d2422;
+  --ink-700: #333c39;
+  --ink-600: #4d5754;
+  --ink-500: #6b7573;
+  --ink-400: #8f9997;
+  --ink-300: #c2cac7;
+  --ink-200: #e2e7e5;
+  --ink-100: #f0f3f2;
+  --ink-50:  #f8faf9;
+  --white: #ffffff;
+
+  --bg: #f6f8f7;
+  --surface: #ffffff;
+  --surface-alt: #f1f4f3;
+  --border: #e3e8e6;
+  --border-strong: #cfd7d4;
+
+  /* Typography */
+  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.85rem;
+  --fs-base: 0.95rem;
+  --fs-md: 1.05rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.6rem;
+  --fs-2xl: 2.1rem;
+  --fs-3xl: 2.9rem;
+
+  /* Spacing */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px; --sp-9: 96px;
+
+  --radius-sm: 6px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+  --radius-full: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(16, 22, 20, .06);
+  --shadow-sm: 0 2px 8px rgba(16, 22, 20, .06);
+  --shadow: 0 6px 20px rgba(16, 22, 20, .08);
+  --shadow-lg: 0 18px 48px rgba(6, 48, 28, .16);
+
+  --header-h: 68px;
+  --container: 1240px;
+  --transition: 180ms cubic-bezier(.4, 0, .2, 1);
+  --focus-ring: 0 0 0 3px rgba(31, 157, 85, .35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}

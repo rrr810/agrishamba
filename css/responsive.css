@@ -1,0 +1,88 @@
+/* Mobile-first adjustments — layered last */
+@media (max-width: 1080px) {
+  .hero__inner { grid-template-columns: 1fr; padding: var(--sp-7) 0; }
+  .hero__media { order: -1; }
+  .hero__float { display: none; }
+  .steps { grid-template-columns: repeat(2, 1fr); }
+  .step::after { display: none; }
+  .usertype-grid { grid-template-columns: repeat(2, 1fr); }
+  .footer-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .product-layout, .calc-layout { grid-template-columns: 1fr; }
+  .calc-result, .summary, .filters, .dash-side { position: static; }
+}
+
+@media (max-width: 960px) {
+  .nav-toggle {
+    display: grid; place-items: center; width: 42px; height: 42px; margin-left: auto;
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+  }
+  .nav-toggle span { display: block; width: 18px; height: 2px; background: var(--ink-800); position: relative; }
+  .nav-toggle span::before, .nav-toggle span::after {
+    content: ''; position: absolute; left: 0; width: 18px; height: 2px; background: var(--ink-800); transition: var(--transition);
+  }
+  .nav-toggle span::before { top: -6px; } .nav-toggle span::after { top: 6px; }
+  .nav-toggle[aria-expanded="true"] span { background: transparent; }
+  .nav-toggle[aria-expanded="true"] span::before { top: 0; transform: rotate(45deg); }
+  .nav-toggle[aria-expanded="true"] span::after { top: 0; transform: rotate(-45deg); }
+
+  .nav {
+    position: fixed; inset: var(--header-h) 0 auto 0; background: var(--surface);
+    flex-direction: column; align-items: stretch; padding: var(--sp-3);
+    border-bottom: 1px solid var(--border); box-shadow: var(--shadow-lg);
+    max-height: calc(100vh - var(--header-h)); overflow: auto; margin: 0; gap: 2px;
+    transform: translateY(-8px); opacity: 0; pointer-events: none; transition: var(--transition);
+  }
+  .nav.open { transform: none; opacity: 1; pointer-events: auto; }
+  .nav a { padding: 13px 14px; font-size: var(--fs-base); }
+  .nav a.active::after { display: none; }
+  .header-actions { margin-left: 0; order: 3; }
+  .site-header__inner { gap: var(--sp-2); }
+
+  .market-layout, .cart-layout, .dash, .settings-layout { grid-template-columns: 1fr; }
+  .filters { display: none; }
+  .filters.open { display: block; }
+  .filters-toggle { display: inline-flex; }
+  .auth-wrap { grid-template-columns: 1fr; }
+  .auth-visual { display: none; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .dash-side { position: static; }
+  .dash-nav { display: flex; overflow-x: auto; gap: 6px; padding-bottom: 4px; }
+  .dash-nav a { white-space: nowrap; }
+  .dash-nav .group-label { display: none; }
+  .dash-side__user { border-bottom: 0; }
+}
+
+@media (max-width: 680px) {
+  :root { --fs-2xl: 1.7rem; --fs-3xl: 2.1rem; --sp-9: 56px; --sp-8: 44px; }
+  .container { width: min(100% - 24px, var(--container)); }
+  .section { padding: var(--sp-8) 0; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
+  .usertype-grid, .steps { grid-template-columns: 1fr; }
+  .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .product-card__body { padding: 12px; }
+  .product-card__actions { flex-direction: column; }
+  .cart-item { grid-template-columns: 64px 1fr; row-gap: 10px; }
+  .cart-item img { width: 64px; height: 58px; }
+  .cart-item > :last-child { grid-column: 1 / -1; }
+  .cta-band { padding: var(--sp-6) var(--sp-4); }
+  .stats-band { padding: var(--sp-5) var(--sp-4); }
+  .stats-grid .num { font-size: 1.7rem; }
+  .toast-stack { right: 12px; left: 12px; bottom: 12px; width: auto; }
+  .dropdown__panel { position: fixed; right: 12px; left: 12px; width: auto; }
+  .modal { border-radius: var(--radius); }
+  .btn { padding: 11px 16px; }
+  .page-head { padding: var(--sp-6) 0; }
+  .stat__value { font-size: 1.45rem; }
+  .profile-head { flex-direction: column; align-items: flex-start; }
+}
+
+@media (min-width: 1500px) {
+  :root { --container: 1340px; }
+}
+
+@media print {
+  .site-header, .site-footer, .btn, .toast-stack, .demo-ribbon { display: none !important; }
+  body { background: #fff; }
+  .card { box-shadow: none; border: 1px solid #ccc; }
+}

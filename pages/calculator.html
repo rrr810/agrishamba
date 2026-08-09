@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Farm cost &amp; profit calculator — SokoShamba</title>
+<meta name="description" content="Work out real production costs, break-even price, profit scenarios and sensitivity for any Kenyan crop, adjusted for your county and management level.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%A7%AE%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/forms.css"><link rel="stylesheet" href="../css/pages.css">
+<link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body data-nav="Farm Tools">
+<a class="skip-link" href="#main">Skip to main content</a>
+<div id="site-header"></div>
+<main id="main">
+  <section class="page-head">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a><span>/</span><span>Farm calculator</span></nav>
+      <h1>🧮 Farm cost &amp; profit calculator</h1>
+      <p>Know your true cost of production, break-even price and what you'd make in a good, likely or poor season — before you plant.</p>
+    </div>
+  </section>
+
+  <div class="container" style="padding-block:var(--sp-5) var(--sp-8)">
+
+    <div class="flex gap-2 wrap mb-5">
+      <a class="chip active" href="calculator.html">🧮 Cost &amp; profit</a>
+      <a class="chip" href="start-farming.html">🌱 What should I grow?</a>
+      <a class="chip" href="market-prices.html">📈 Market prices</a>
+      <a class="chip" href="advisory.html">📚 Advisory guides</a>
+    </div>
+
+    <div class="calc-layout">
+      <form class="card card--pad" id="calcForm" novalidate>
+
+        <fieldset class="mb-5">
+          <legend>1. What and where</legend>
+
+          <div class="field">
+            <label for="cropSelect">Pick a crop
+              <span class="hint" style="display:inline">(auto-fills real Kenyan costs)</span></label>
+            <select class="select" id="cropSelect"></select>
+          </div>
+
+          <div id="cropHint" class="mb-4"></div>
+
+          <div class="grid-2">
+            <div class="field"><label for="crop">Crop / enterprise name <span class="req">*</span></label>
+              <input class="input" id="crop" name="crop" placeholder="e.g. Maize" required></div>
+            <div class="field"><label for="county">County</label>
+              <select class="select" id="county" name="county"></select>
+              <p class="hint">Adjusts expected yield for local rainfall.</p></div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field"><label for="size">Farm size (acres) <span class="req">*</span></label>
+              <input class="input" id="size" name="size" type="number" min="0.05" step="0.05" value="1" required></div>
+            <div class="field"><label for="management">Management level</label>
+              <select class="select" id="management" name="management"></select></div>
+          </div>
+        </fieldset>
+
+        <fieldset class="mb-5">
+          <legend>2. Your costs per acre (KES)</legend>
+          <p class="hint mb-4">Auto-filled from typical Kenyan budgets. Change any figure to match your real prices.</p>
+          <div class="grid-3">
+            <div class="field"><label for="seed">Seed</label>
+              <input class="input" id="seed" name="seed" type="number" min="0" value="0"></div>
+            <div class="field"><label for="fertilizer">Fertilizer</label>
+              <input class="input" id="fertilizer" name="fertilizer" type="number" min="0" value="0"></div>
+            <div class="field"><label for="chemicals">Chemicals</label>
+              <input class="input" id="chemicals" name="chemicals" type="number" min="0" value="0"></div>
+            <div class="field"><label for="labour">Labour</label>
+              <input class="input" id="labour" name="labour" type="number" min="0" value="0"></div>
+            <div class="field"><label for="land">Land preparation</label>
+              <input class="input" id="land" name="land" type="number" min="0" value="0"></div>
+            <div class="field"><label for="irrigation">Irrigation</label>
+              <input class="input" id="irrigation" name="irrigation" type="number" min="0" value="0"></div>
+            <div class="field"><label for="transport">Transport &amp; marketing</label>
+              <input class="input" id="transport" name="transport" type="number" min="0" value="0"></div>
+            <div class="field"><label for="other">Other costs</label>
+              <input class="input" id="other" name="other" type="number" min="0" value="0"></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>3. Expected output</legend>
+          <div class="grid-3">
+            <div class="field"><label for="yield">Yield per acre <span class="req">*</span></label>
+              <input class="input" id="yield" name="yield" type="number" min="0.1" step="0.1" value="0" required></div>
+            <div class="field"><label for="unit">Unit</label>
+              <input class="input" id="unit" name="unit" value="90kg bag" placeholder="e.g. 90kg bag"></div>
+            <div class="field"><label for="price">Selling price per unit (KES) <span class="req">*</span></label>
+              <input class="input" id="price" name="price" type="number" min="1" value="0" required></div>
+          </div>
+        </fieldset>
+
+        <div class="form-actions">
+          <button class="btn btn--primary btn--lg" type="submit">Calculate</button>
+          <button class="btn btn--outline" type="button" id="resetCalc">Reset</button>
+          <button class="btn btn--ghost" type="button" id="printCalc">🖨 Export / print</button>
+        </div>
+        <p class="hint mt-4">Your last calculation is saved on this device only. Nothing is shared.</p>
+      </form>
+
+      <aside class="calc-result" aria-live="polite">
+        <div id="resultCard"></div>
+      </aside>
+    </div>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script type="module" src="../js/app.js"></script>
+<script type="module" src="../js/calculator.js"></script>
+</body>
+</html>

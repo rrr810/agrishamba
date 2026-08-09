@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market prices — SokoShamba</title>
+<meta name="description" content="Reference crop prices by market and county across Kenya (demo data until a live source is connected).">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/forms.css"><link rel="stylesheet" href="../css/pages.css">
+<link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body data-nav="Farm Tools">
+<a class="skip-link" href="#main">Skip to main content</a>
+<div id="site-header"></div>
+<main id="main">
+  <section class="page-head">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a><span>/</span><span>Market prices</span></nav>
+      <h1>Market information</h1>
+      <p>Reference prices by crop, market and county to help you decide when and where to sell.</p>
+    </div>
+  </section>
+  <div class="container" style="padding-block:var(--sp-5) var(--sp-8)">
+    <div class="alert alert--warn">
+      <span aria-hidden="true">🧪</span>
+      <div><strong>Demo data.</strong> These prices are illustrative samples, not a live market feed. A real data
+        source (county market boards or a pricing API) will replace them through the <code>marketPrices</code> service.</div>
+    </div>
+    <div class="market-toolbar">
+      <div><label class="sr-only" for="cropFilter">Crop</label>
+        <select class="select" id="cropFilter"><option value="all">All crops</option></select></div>
+      <div><label class="sr-only" for="countyFilter">County</label>
+        <select class="select" id="countyFilter"><option value="all">All counties</option></select></div>
+      <a class="btn btn--outline" href="marketplace.html">Sell at these prices</a>
+    </div>
+    <div class="card" id="pricesCard" aria-live="polite"></div>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script type="module" src="../js/app.js"></script>
+<script type="module" src="../js/pages/market-prices.js"></script>
+</body>
+</html>

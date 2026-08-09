@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order details — SokoShamba</title>
+<meta name="description" content="Full details, live delivery route map, timeline and delivery information for your SokoShamba order.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/forms.css"><link rel="stylesheet" href="../css/dashboard.css">
+<link rel="stylesheet" href="../css/pages.css"><link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div id="site-header"></div>
+<main id="main">
+  <div class="container" style="padding-block:var(--sp-5) var(--sp-8)">
+    <nav class="breadcrumbs" aria-label="Breadcrumb" style="color:var(--ink-500)">
+      <a href="../index.html">Home</a><span>/</span><a href="orders.html">Orders</a><span>/</span><span id="crumbId">Order</span></nav>
+    <div id="orderContainer" aria-live="polite"></div>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module" src="../js/app.js"></script>
+<script type="module" src="../js/pages/orders.js"></script>
+<script type="module">
+  import { initOrderRouteMap } from '../js/maps.js';
+  // The map mounts after orders.js renders the detail template.
+  setTimeout(initOrderRouteMap, 400);
+</script>
+</body>
+</html>

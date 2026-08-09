@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your cart — SokoShamba</title>
+<meta name="description" content="Review the produce and inputs in your SokoShamba cart before checkout.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/forms.css"><link rel="stylesheet" href="../css/pages.css">
+<link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body data-nav="Marketplace">
+<a class="skip-link" href="#main">Skip to main content</a>
+<div id="site-header"></div>
+<main id="main">
+  <section class="page-head">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a><span>/</span><a href="marketplace.html">Marketplace</a><span>/</span><span>Cart</span></nav>
+      <h1>Your cart</h1>
+      <p>Review quantities and delivery estimates before checkout.</p>
+    </div>
+  </section>
+  <div class="container">
+    <div class="cart-layout" id="cartLayout">
+      <section class="card card--pad" aria-label="Cart items">
+        <div class="flex items-center justify-between mb-3">
+          <h2 style="font-size:var(--fs-md)">Items <span class="badge" id="itemCount">0</span></h2>
+          <button class="btn btn--ghost btn--sm" id="clearCart" type="button">Clear cart</button>
+        </div>
+        <div id="cartItems" aria-live="polite"></div>
+      </section>
+      <aside class="summary card card--pad" aria-label="Order summary">
+        <h2 style="font-size:var(--fs-md)" class="mb-3">Order summary</h2>
+        <div class="field">
+          <label for="deliveryCounty">Estimate delivery to</label>
+          <select class="select" id="deliveryCounty"><option value="">Select county</option></select>
+        </div>
+        <div class="summary__row"><span>Subtotal</span><strong id="sumSubtotal">KES 0</strong></div>
+        <div class="summary__row"><span>Estimated delivery</span><strong id="sumDelivery">KES 0</strong></div>
+        <div class="summary__row"><span class="muted small">Platform fee (paid by seller)</span><span class="muted small" id="sumFee">KES 0</span></div>
+        <div class="summary__row total"><span>Total</span><strong id="sumTotal">KES 0</strong></div>
+        <a class="btn btn--primary btn--block btn--lg mt-4" id="checkoutBtn" href="checkout.html">Proceed to checkout</a>
+        <a class="btn btn--outline btn--block mt-3" href="marketplace.html">Continue shopping</a>
+        <p class="small muted mt-4">Delivery is an estimate. The seller confirms the final cost before dispatch.</p>
+      </aside>
+    </div>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script type="module" src="../js/app.js"></script>
+<script type="module" src="../js/pages/cart-page.js"></script>
+</body>
+</html>

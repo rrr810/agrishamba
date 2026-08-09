@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Farm expense tracker — know your true costs | SokoShamba</title>
+<meta name="description" content="Log every farm expense, see where your money goes, track your season budget and spot overspending before it hurts.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%93%93%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/forms.css"><link rel="stylesheet" href="../css/dashboard.css">
+<link rel="stylesheet" href="../css/pages.css"><link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body data-nav="Farm Tools">
+<a class="skip-link" href="#main">Skip to main content</a>
+<div id="site-header"></div>
+
+<main id="main">
+  <section class="page-head">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a><span>/</span><span>Expense tracker</span></nav>
+      <h1>📒 Farm expense tracker</h1>
+      <p>The farm that writes down every shilling never wonders where the money went.</p>
+    </div>
+  </section>
+
+  <div class="container" style="padding-block:var(--sp-5) var(--sp-8)">
+
+    <div class="flex gap-2 wrap mb-5">
+      <a class="chip" href="calculator.html">🧮 Cost &amp; profit</a>
+      <a class="chip" href="farm-tools.html">🛠️ Farm tools</a>
+      <a class="chip" href="loan-calculator.html">💰 Loan calculator</a>
+      <a class="chip active" href="expenses.html">📒 Expense tracker</a>
+    </div>
+
+    <!-- Stats, budget, breakdown, trend -->
+    <div id="expenseStats"></div>
+
+    <div class="calc-layout mt-5">
+      <form class="card card--pad" id="expenseForm" novalidate>
+        <h2 style="font-size:var(--fs-md)" class="mb-2">➕ Log an expense</h2>
+        <p class="small muted mb-4">Takes 10 seconds. Do it the day you spend — memory fades fast.</p>
+
+        <div class="grid-2">
+          <div class="field"><label for="expDate">Date</label>
+            <input class="input" id="expDate" type="date"></div>
+          <div class="field"><label for="expAmount">Amount (KES) <span class="req">*</span></label>
+            <input class="input" id="expAmount" type="number" min="1" step="1" placeholder="e.g. 2400"
+                   style="font-size:1.05rem"></div>
+        </div>
+
+        <div class="field"><label for="expCategory">Category</label>
+          <select class="select" id="expCategory"></select></div>
+
+        <div class="field"><label for="expCrop">Crop / enterprise (optional)</label>
+          <select class="select" id="expCrop"></select>
+          <p class="hint">Tag it to a crop so you can see each crop's true cost later.</p></div>
+
+        <div class="field"><label for="expDesc">Description</label>
+          <input class="input" id="expDesc" placeholder="e.g. 2 bags CAN from Eldoret agrovet"></div>
+
+        <div class="form-actions">
+          <button class="btn btn--primary btn--lg" type="submit" id="saveExpenseBtn">Log expense</button>
+          <button class="btn btn--outline" type="button" id="cancelEditBtn" hidden>Cancel edit</button>
+        </div>
+      </form>
+
+      <aside>
+        <div class="card card--pad mb-4">
+          <h3 style="font-size:var(--fs-base)" class="mb-2">🎯 Season budget</h3>
+          <div class="field" style="margin:0">
+            <input class="input" id="seasonBudget" type="number" min="0" step="1000"
+                   placeholder="e.g. 150000">
+            <p class="hint">Optional. Set what you planned to spend — we'll warn you as you approach it.</p>
+          </div>
+        </div>
+
+        <div class="card" id="expenseListWrap">
+          <div class="card__head"><h2>All records</h2>
+            <button class="btn btn--ghost btn--sm" id="printExpenses">🖨 Print</button></div>
+          <div class="card__body" id="expenseList"></div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="alert alert--info mt-5">
+      <span aria-hidden="true">💡</span>
+      <div><strong>Why this matters:</strong> your logged spending becomes the "real costs" input for the
+        <a href="calculator.html">profit calculator</a> next season — so your numbers come from your farm, not from guesses.</div>
+    </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script type="module" src="../js/app.js"></script>
+<script type="module" src="../js/farm-expenses.js"></script>
+</body>
+</html>

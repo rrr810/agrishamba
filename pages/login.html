@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in — SokoShamba</title>
+<meta name="description" content="Log in to your SokoShamba account to manage listings, orders and your farm tools.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/forms.css"><link rel="stylesheet" href="../css/pages.css">
+<link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div id="site-header"></div>
+<main id="main">
+  <div class="auth-wrap">
+    <section class="auth-visual">
+      <span class="eyebrow" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#bff0d3">Welcome back</span>
+      <h2>Your farm business, in one place.</h2>
+      <p>Pick up where you left off — listings, orders, payments and advisory content.</p>
+      <ul>
+        <li><span aria-hidden="true">🌾</span> Manage produce and input listings</li>
+        <li><span aria-hidden="true">📦</span> Track orders from payment to delivery</li>
+        <li><span aria-hidden="true">🧮</span> Plan the season with the farm calculator</li>
+        <li><span aria-hidden="true">🔔</span> Get notified when buyers order</li>
+      </ul>
+    </section>
+    <section class="auth-panel">
+      <div class="auth-card">
+        <h1>Log in</h1>
+        <p class="muted mb-5">Enter your details to access your SokoShamba account.</p>
+
+        <div class="alert alert--info">
+          <span aria-hidden="true">🧪</span>
+          <div><strong>Demo mode.</strong> Use a demo email below with any password of 6+ characters, or pick a persona.</div>
+        </div>
+
+        <div class="chips mb-5" role="group" aria-label="Demo personas">
+          <button class="chip" type="button" data-demo="farmer">Farmer demo</button>
+          <button class="chip" type="button" data-demo="buyer">Buyer demo</button>
+          <button class="chip" type="button" data-demo="supplier">Supplier demo</button>
+          <button class="chip" type="button" data-demo="service">Service demo</button>
+        </div>
+
+        <form id="loginForm" novalidate>
+          <div id="formAlert" role="alert" aria-live="assertive"></div>
+          <div class="field">
+            <label for="email">Email address <span class="req" aria-hidden="true">*</span></label>
+            <input class="input" type="email" id="email" name="email" autocomplete="email" placeholder="you@example.com" required>
+          </div>
+          <div class="field">
+            <label for="password">Password <span class="req" aria-hidden="true">*</span></label>
+            <div class="input-group">
+              <input class="input" type="password" id="password" name="password" autocomplete="current-password" placeholder="Your password" required>
+              <button type="button" class="input-affix" data-toggle-password="password" aria-label="Show password">👁</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between wrap gap-2 mb-4">
+            <label class="filter-option"><input type="checkbox" name="remember" checked> Keep me signed in</label>
+            <a class="small" href="forgot-password.html">Forgot password?</a>
+          </div>
+          <button class="btn btn--primary btn--block btn--lg" type="submit">Log in</button>
+        </form>
+        <p class="auth-alt">New to SokoShamba? <a href="register.html">Create an account</a></p>
+        <p class="auth-alt small muted">By continuing you agree to our <a href="terms.html">Terms</a> and <a href="privacy.html">Privacy Policy</a>.</p>
+      </div>
+    </section>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script type="module" src="../js/app.js"></script>
+<script type="module" src="../js/pages/auth-ui.js"></script>
+</body>
+</html>

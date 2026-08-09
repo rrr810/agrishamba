@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agri loan calculator — compare Kenyan lenders | SokoShamba</title>
+<meta name="description" content="Compare SACCO, bank, MFI, AFC and digital loans side by side. See the real total cost of borrowing and whether your farm can afford the repayments.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/forms.css"><link rel="stylesheet" href="../css/pages.css">
+<link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body data-nav="Farm Tools">
+<a class="skip-link" href="#main">Skip to main content</a>
+<div id="site-header"></div>
+
+<main id="main">
+  <section class="page-head">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a><span>/</span><span>Loan calculator</span></nav>
+      <h1>💰 Agri loan calculator</h1>
+      <p>Compare 7 Kenyan lender types side by side. See what you'd really pay — and whether your farm can afford it.</p>
+    </div>
+  </section>
+
+  <div class="container" style="padding-block:var(--sp-5) var(--sp-8)">
+
+    <div class="flex gap-2 wrap mb-5">
+      <a class="chip" href="calculator.html">🧮 Cost &amp; profit</a>
+      <a class="chip" href="farm-tools.html">🛠️ Farm tools</a>
+      <a class="chip active" href="loan-calculator.html">💰 Loan calculator</a>
+      <a class="chip" href="start-farming.html">🌱 What should I grow?</a>
+    </div>
+
+    <div class="alert alert--info mb-5">
+      <span aria-hidden="true">⚠️</span>
+      <div><strong>Borrow last, not first.</strong> Cost your season with the
+        <a href="calculator.html">farm calculator</a> before you borrow anything.
+        A loan on an unprofitable plan just multiplies the loss.</div>
+    </div>
+
+    <div class="calc-layout">
+      <form class="card card--pad" id="loanForm" novalidate>
+
+        <fieldset class="mb-5">
+          <legend>How much do you need?</legend>
+
+          <div class="field">
+            <label for="amount">Loan amount (KES) <span class="req">*</span></label>
+            <input class="input" id="amount" type="number" min="1000" step="1000"
+                   value="50000" required style="font-size:1.1rem;padding:14px">
+          </div>
+
+          <div class="chips mb-4" role="group" aria-label="Quick amounts">
+            <button class="chip" type="button" data-amount="20000">20K</button>
+            <button class="chip" type="button" data-amount="50000">50K</button>
+            <button class="chip" type="button" data-amount="100000">100K</button>
+            <button class="chip" type="button" data-amount="250000">250K</button>
+            <button class="chip" type="button" data-amount="500000">500K</button>
+            <button class="chip" type="button" data-amount="1000000">1M</button>
+          </div>
+
+          <div class="field">
+            <label for="months">Repayment period (months) <span class="req">*</span></label>
+            <select class="select" id="months">
+              <option value="3">3 months — one short season</option>
+              <option value="6" selected>6 months — one full season</option>
+              <option value="9">9 months</option>
+              <option value="12">12 months — one year</option>
+              <option value="18">18 months</option>
+              <option value="24">24 months — two years</option>
+              <option value="36">36 months — three years</option>
+              <option value="48">48 months</option>
+              <option value="60">60 months — five years</option>
+            </select>
+            <p class="hint">Match this to when you'll actually have money — usually after harvest.</p>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Can you afford it?</legend>
+          <div class="field">
+            <label for="expectedProfit">Expected profit over the whole period (KES)</label>
+            <input class="input" id="expectedProfit" type="number" min="0" step="1000"
+                   placeholder="e.g. 120000">
+            <p class="hint">Get this number from the
+              <a href="calculator.html">farm calculator</a>. Leave blank to skip the affordability check.</p>
+          </div>
+        </fieldset>
+
+        <div class="form-actions">
+          <button class="btn btn--primary btn--lg" type="submit">Compare lenders</button>
+          <button class="btn btn--outline" type="button" id="resetLoan">Reset</button>
+        </div>
+
+        <div class="alert alert--warn mt-5">
+          <span aria-hidden="true">🚨</span>
+          <div class="small"><strong>Red flags to walk away from:</strong> anyone asking for money
+            before approving a loan, refusing to show total repayable in writing,
+            or pushing you to sign the same day.</div>
+        </div>
+      </form>
+
+      <aside class="calc-result" aria-live="polite">
+        <div id="loanResult"></div>
+      </aside>
+    </div>
+
+    <div class="cta-band mt-7">
+      <h2>Not sure you should borrow?</h2>
+      <p>Talk it through with us on WhatsApp. Sometimes starting smaller beats starting in debt.</p>
+      <div class="hero__cta" style="justify-content:center">
+        <a class="btn btn--light btn--lg" href="calculator.html">🧮 Cost my season first</a>
+        <a class="btn btn--outline btn--lg" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.4)"
+           href="https://wa.me/254740793959?text=Hi%20SokoShamba,%20I%20have%20a%20question%20about%20farm%20financing:"
+           target="_blank" rel="noopener">💬 Ask us</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script type="module" src="../js/app.js"></script>
+<script type="module" src="../js/loan-calculator.js"></script>
+</body>
+</html>
