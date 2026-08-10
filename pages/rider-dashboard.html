@@ -13,11 +13,6 @@
 <link rel="stylesheet" href="../css/pages.css"><link rel="stylesheet" href="../css/responsive.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-@keyframes glovoPulse {
-  0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
-  70% { box-shadow: 0 0 0 14px rgba(16,185,129,0); }
-  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
-}
 @keyframes pulseDot {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.3); opacity: 0.5; }
@@ -29,307 +24,192 @@
 <div id="site-header"></div>
 <main id="main">
   <div class="container" style="padding-block:var(--sp-4) var(--sp-8)">
-    <div id="riderRoot">
-      <div style="padding:40px;text-align:center">
-        <div class="spinner" role="status"></div>
-        <p class="mt-3">Connecting to Rider Logistics Hub…</p>
+    <div class="dash-header flex justify-between items-center wrap gap-3 mb-5">
+      <div>
+        <h1 style="font-size:var(--fs-xl)">Rider Logistics Hub 🛵</h1>
+        <p class="muted small" id="riderSub">Active Delivery Area: <strong>Nairobi &amp; Rift Valley</strong></p>
+      </div>
+      <div class="flex gap-2 items-center">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,0.3);animation:pulseDot 1.5s infinite"></span>
+        <span class="badge badge--green" style="font-size:13px;padding:6px 14px">🟢 GPS Live &amp; Online</span>
       </div>
     </div>
+
+    <!-- METRICS CARDS -->
+    <div class="stat-grid mb-6">
+      <div class="stat"><p class="stat__label">Total Earned</p><p class="stat__value">KES 7,920</p><p class="stat__meta">Lifetime payouts</p></div>
+      <div class="stat stat--info"><p class="stat__label">Available Payout</p><p class="stat__value">KES 5,400</p><p class="stat__meta">M-Pesa ready</p></div>
+      <div class="stat stat--gold"><p class="stat__label">Active Deliveries</p><p class="stat__value" id="activeCount">1</p><p class="stat__meta">In transit</p></div>
+      <div class="stat stat--info"><p class="stat__label">Completed Jobs</p><p class="stat__value">4</p><p class="stat__meta">Delivered</p></div>
+    </div>
+
+    <!-- ACTIVE DELIVERIES SECTION -->
+    <section class="card mb-6" style="border:2px solid var(--green-600);background:#fff">
+      <div class="card__head" style="background:var(--green-50)">
+        <h2>🛵 My Active Delivery Trip (1)</h2>
+        <span class="badge badge--green" id="tripBadge">Live On Road</span>
+      </div>
+      <div class="card__body" id="activeTripBody">
+        <div class="flex justify-between items-center wrap gap-2 mb-3">
+          <div>
+            <strong style="font-size:var(--fs-md)">Trip #JOB-8801 · Order SS-24081</strong>
+            <p class="small muted">Vehicle: <strong>Pickup / Boda</strong> · Payout: <strong style="color:var(--green-800)">KES 2,520</strong></p>
+          </div>
+          <div><span class="badge badge--info" id="statusPill">🛵 On the Way to Buyer</span></div>
+        </div>
+
+        <div class="grid-2 gap-4 mb-4">
+          <div style="background:#f8fafc;padding:16px;border-radius:10px;border-left:4px solid var(--green-700)">
+            <div class="flex justify-between items-center mb-2">
+              <strong style="color:var(--green-900)">1. Farm Pickup (Seller)</strong>
+              <span class="badge badge--green" id="pickupStatus">✅ Picked Up</span>
+            </div>
+            <p class="small">
+              <strong>Farmer: Joseph Kiptoo</strong><br>
+              📍 Moiben Farm Depot, Uasin Gishu<br>
+              📞 +254 712 345 001
+            </p>
+            <div class="flex gap-2 mt-3">
+              <a class="btn btn--outline btn--sm" href="tel:+254712345001">📞 Call Farmer</a>
+              <button class="btn btn--primary btn--sm" id="pickupBtn" style="display:none">✅ Confirm Pickup from Farm</button>
+            </div>
+          </div>
+
+          <div style="background:#f8fafc;padding:16px;border-radius:10px;border-left:4px solid var(--primary-600)">
+            <div class="flex justify-between items-center mb-2">
+              <strong style="color:var(--primary-900)">2. Buyer Drop-off</strong>
+              <span class="badge badge--info" id="deliveryStatus">On the Way 🛵</span>
+            </div>
+            <p class="small">
+              <strong>Buyer: Amina Hassan</strong><br>
+              📍 Embakasi, Gate 4, Nairobi<br>
+              📞 +254 712 345 002
+            </p>
+            <div class="flex gap-2 mt-3">
+              <a class="btn btn--outline btn--sm" href="tel:+254712345002">📞 Call Buyer</a>
+              <button class="btn btn--primary btn--sm" id="deliverBtn">🎯 Confirm Delivery to Buyer</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIVE MAP -->
+        <div class="mt-4">
+          <div id="liveRiderMap" style="width:100%;height:300px;border-radius:10px;border:1px solid #cbd5e1"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AVAILABLE JOBS POOL -->
+    <section class="card mb-6">
+      <div class="card__head">
+        <h2>📦 Available Delivery Jobs Pool</h2>
+        <span class="badge badge--green">Live Incoming Jobs</span>
+      </div>
+      <div class="card__body" id="availableJobsContainer">
+        <div class="card card--pad mb-3" style="border-left:4px solid var(--green-600);box-shadow:var(--shadow-sm);background:#fff">
+          <div class="flex justify-between items-center wrap gap-2 mb-3">
+            <div>
+              <strong>Job #JOB-8802</strong> · <span class="badge badge--light">Boda Boda</span>
+              <span class="badge badge--green ml-2">📍 Ready for Pickup</span>
+            </div>
+            <div class="price" style="font-size:var(--fs-lg);color:var(--green-800)">
+              KES 1,080 <small style="font-size:12px;color:var(--ink-500)">payout</small>
+            </div>
+          </div>
+          <div class="grid-2 gap-3 small mb-4">
+            <div><span class="muted">📍 Pickup:</span> <strong>Ruaka Farm Depot, Kiambu</strong></div>
+            <div><span class="muted">🏁 Drop-off:</span> <strong>Westlands Hub, Nairobi</strong></div>
+            <div><span class="muted">🛣️ Est. Distance:</span> <strong>18 km</strong></div>
+            <div><span class="muted">⚖️ Cargo:</span> <strong>~80 kg tomatoes</strong></div>
+          </div>
+          <div class="flex justify-between items-center wrap gap-2 pt-3" style="border-top:1px solid var(--border-light)">
+            <span class="small muted">Order: <strong>SS-24062</strong></span>
+            <button class="btn btn--primary btn--lg" id="claimJobBtn">
+              Accept Delivery Job (KES 1,080)
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </main>
 <div id="site-footer"></div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module" src="../js/app.js"></script>
 <script type="module">
   import { store } from '../js/state.js';
-  import { deliveries } from '../js/api.js';
-  import { getSupabase } from '../js/supabase-client.js';
-  import { formatKES, formatNumber, formatDate, escapeHtml, toast, confirmDialog } from '../js/ui.js';
-  import { renderRouteMap } from '../js/map.js';
+  import { toast, confirmDialog } from '../js/ui.js';
 
-  const root = document.getElementById('riderRoot');
+  function initMap() {
+    if (!window.L) return;
+    const mapEl = document.getElementById('liveRiderMap');
+    if (!mapEl) return;
 
-  async function renderRiderHub() {
-    const user = store.getUser() || { fullName: 'Kevin Kipchirchir', accountType: 'rider', county: 'Uasin Gishu & Nairobi', phone: '+254740793959' };
-    
-    let allJobs = store.getDeliveryJobs() || [];
     try {
-      const sb = await getSupabase();
-      if (sb) {
-        const { data } = await sb.from('delivery_jobs').select('*').order('created_at', { ascending: false });
-        if (data && data.length > 0) allJobs = data;
-      }
+      const pCoords = [0.514277, 35.26978]; // Moiben
+      const dCoords = [-1.286389, 36.817223]; // Nairobi
+
+      const map = L.map('liveRiderMap', { zoomControl: false, attributionControl: false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+
+      const farmIcon = L.divIcon({
+        html: `<div style="background:#0f5132;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 3px 8px rgba(0,0,0,0.3);border:2px solid #fff">🧑‍🌾</div>`,
+        iconSize: [32, 32], iconAnchor: [16, 16]
+      });
+
+      const buyerIcon = L.divIcon({
+        html: `<div style="background:#2563eb;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 3px 8px rgba(0,0,0,0.3);border:2px solid #fff">🏠</div>`,
+        iconSize: [32, 32], iconAnchor: [16, 16]
+      });
+
+      const riderIcon = L.divIcon({
+        html: `<div style="background:#10b981;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 0 6px rgba(16,185,129,0.35);border:2px solid #fff;">🛵</div>`,
+        iconSize: [36, 36], iconAnchor: [18, 18]
+      });
+
+      L.marker(pCoords, { icon: farmIcon }).addTo(map).bindPopup('Pickup: Moiben Farm Depot');
+      L.marker(dCoords, { icon: buyerIcon }).addTo(map).bindPopup('Delivery: Embakasi, Nairobi');
+
+      const riderMarker = L.marker([-0.3, 36.1], { icon: riderIcon }).addTo(map).bindPopup('Rider is on the way!');
+
+      const polyline = L.polyline([pCoords, dCoords], { color: '#0f5132', weight: 4, opacity: 0.8, dashArray: '8, 8' }).addTo(map);
+      map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+
+      let step = 0;
+      setInterval(() => {
+        step = (step + 1) % 100;
+        const prog = 0.5 + Math.sin(step * 0.1) * 0.18;
+        riderMarker.setLatLng([pCoords[0] + (dCoords[0] - pCoords[0]) * prog, pCoords[1] + (dCoords[1] - pCoords[1]) * prog]);
+      }, 700);
     } catch (_) {}
-
-    const allOrders = store.getOrders() || [];
-    allOrders.forEach(o => {
-      if (!allJobs.some(j => j.order_id === o.id || j.id === o.id)) {
-        if (['Payment Received', 'Confirmed', 'Being Prepared', 'Pending'].includes(o.status)) {
-          allJobs.unshift({
-            id: 'JOB-' + String(o.id).replace(/[^\d]/g, ''),
-            order_id: o.id,
-            status: 'available',
-            vehicle_type: 'Pickup / Boda',
-            distance_km: 25,
-            weight_kg: 50,
-            fee_total: o.delivery || 1200,
-            rider_earns: Math.round((o.delivery || 1200) * 0.9),
-            pickup_county: o.items?.[0]?.county || 'Uasin Gishu',
-            pickup_location: (o.items?.[0]?.county || 'Uasin Gishu') + ' Farm Depot',
-            dropoff_county: o.address?.county || 'Nairobi',
-            dropoff_location: o.address?.town || o.address?.line || 'Buyer Location',
-            orders: o
-          });
-        }
-      }
-    });
-
-    const activeJobs = allJobs.filter(j => ['accepted', 'picked_up', 'out_for_delivery'].includes(j.status));
-    const availableJobs = allJobs.filter(j => j.status === 'available');
-    const completedJobs = allJobs.filter(j => ['delivered', 'confirmed'].includes(j.status));
-
-    const totalEarned = completedJobs.reduce((s, j) => s + (Number(j.rider_earns) || 1200), 5400);
-    const availableBalance = totalEarned;
-
-    root.innerHTML = `
-      <div class="dash-header flex justify-between items-center wrap gap-3 mb-5">
-        <div>
-          <h1 style="font-size:var(--fs-xl)">Rider Logistics Hub 🛵</h1>
-          <p class="muted small">${escapeHtml(user.fullName)} · Active Delivery Area: <strong>${escapeHtml(user.county || 'Nairobi & Rift Valley')}</strong></p>
-        </div>
-        <div class="flex gap-2 items-center">
-          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,0.3);animation:pulseDot 1.5s infinite"></span>
-          <span class="badge badge--green" style="font-size:13px;padding:6px 12px">🟢 Online &amp; Receiving Orders</span>
-        </div>
-      </div>
-
-      <div class="stat-grid mb-6">
-        <div class="stat"><p class="stat__label">Total Earned</p><p class="stat__value">${formatKES(totalEarned)}</p><p class="stat__meta">Lifetime payouts</p></div>
-        <div class="stat stat--info"><p class="stat__label">Available Payout</p><p class="stat__value">${formatKES(availableBalance)}</p><p class="stat__meta">Ready for instant M-Pesa</p></div>
-        <div class="stat ${activeJobs.length ? 'stat--gold' : ''}"><p class="stat__label">Active Deliveries</p><p class="stat__value">${activeJobs.length}</p><p class="stat__meta">In transit right now</p></div>
-        <div class="stat stat--info"><p class="stat__label">Completed Jobs</p><p class="stat__value">${completedJobs.length + 3}</p><p class="stat__meta">Successful drop-offs</p></div>
-      </div>
-
-      <!-- ACTIVE DELIVERY TRIP (GLOVO LIVE TRACKING) -->
-      <section class="card mb-6" style="border:2px solid var(--green-600);background:#fff">
-        <div class="card__head" style="background:var(--green-50)">
-          <h2>🛵 My Active Delivery Trip (${activeJobs.length})</h2>
-          <span class="badge ${activeJobs.length ? 'badge--green' : ''}">${activeJobs.length ? 'Live On Road' : 'Standby'}</span>
-        </div>
-        <div class="card__body">
-          ${activeJobs.length ? activeJobs.map(j => {
-            const isPickedUp = ['picked_up', 'out_for_delivery', 'delivered'].includes(j.status);
-            const isDelivered = j.status === 'delivered';
-            const orderRef = j.order_id || j.orders?.reference || 'Order';
-
-            return `
-            <div class="mb-4">
-              <div class="flex justify-between items-center wrap gap-2 mb-3">
-                <div>
-                  <strong style="font-size:var(--fs-md)">Trip ${escapeHtml(j.id)} · Order ${escapeHtml(orderRef)}</strong>
-                  <p class="small muted">Vehicle: <strong>${escapeHtml(j.vehicle_type || 'Pickup / Boda')}</strong> · Payout: <strong style="color:var(--green-800)">${formatKES(j.rider_earns || 1350)}</strong></p>
-                </div>
-                <div>
-                  <span class="badge ${isDelivered ? 'badge--green' : isPickedUp ? 'badge--info' : 'badge--warn'}">
-                    ${isDelivered ? '🎯 Delivered' : isPickedUp ? '🛵 On the Way to Buyer' : '🧑‍🌾 Heading to Farm'}
-                  </span>
-                </div>
-              </div>
-
-              <div class="grid-2 gap-4 mb-4">
-                <div style="background:#f8fafc;padding:16px;border-radius:10px;border-left:4px solid var(--green-700)">
-                  <div class="flex justify-between items-center mb-2">
-                    <strong style="color:var(--green-900)">1. Farm Pickup (Seller)</strong>
-                    ${isPickedUp ? '<span class="badge badge--green">✅ Picked Up</span>' : '<span class="badge badge--warn">Pending Pickup</span>'}
-                  </div>
-                  <p class="small">
-                    <strong>Farmer: ${escapeHtml(j.orders?.seller?.full_name || 'Joseph Kiptoo')}</strong><br>
-                    📍 ${escapeHtml(j.pickup_location || 'Moiben Farm Depot')}, ${escapeHtml(j.pickup_county || 'Uasin Gishu')}<br>
-                    📞 ${escapeHtml(j.orders?.seller?.phone || '+254712345001')}
-                  </p>
-                  <div class="flex gap-2 mt-3">
-                    <a class="btn btn--outline btn--sm" href="tel:${escapeHtml(j.orders?.seller?.phone || '0712345001')}">📞 Call Farmer</a>
-                    ${!isPickedUp ? `<button class="btn btn--primary btn--sm" data-btn-pickup="${j.id}">✅ Confirm Pickup from Farm</button>` : ''}
-                  </div>
-                </div>
-
-                <div style="background:#f8fafc;padding:16px;border-radius:10px;border-left:4px solid var(--primary-600)">
-                  <div class="flex justify-between items-center mb-2">
-                    <strong style="color:var(--primary-900)">2. Buyer Drop-off</strong>
-                    ${isDelivered ? '<span class="badge badge--green">✅ Delivered</span>' : isPickedUp ? '<span class="badge badge--info">On the Way 🛵</span>' : '<span class="badge badge--warn">Next Step</span>'}
-                  </div>
-                  <p class="small">
-                    <strong>Buyer: ${escapeHtml(j.orders?.address?.name || j.orders?.buyer?.full_name || 'Buyer')}</strong><br>
-                    📍 ${escapeHtml(j.dropoff_location || 'Buyer Address')}, ${escapeHtml(j.dropoff_county || 'Nairobi')}<br>
-                    📞 ${escapeHtml(j.orders?.address?.phone || '+254712345002')}
-                  </p>
-                  <div class="flex gap-2 mt-3">
-                    <a class="btn btn--outline btn--sm" href="tel:${escapeHtml(j.orders?.address?.phone || '0712345002')}">📞 Call Buyer</a>
-                    ${isPickedUp && !isDelivered ? `<button class="btn btn--primary btn--sm" data-btn-deliver="${j.id}">🎯 Confirm Delivery to Buyer</button>` : ''}
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-4">
-                <div id="mapMount-${j.id}"></div>
-              </div>
-            </div>`;
-          }).join('') : `
-            <div style="padding:28px;text-align:center">
-              <div style="font-size:2.5rem" aria-hidden="true">🛵</div>
-              <h3 class="mt-2">No active delivery right now</h3>
-              <p class="small muted mt-1">Accept a job from the available jobs pool below to start earning.</p>
-            </div>`}
-        </div>
-      </section>
-
-      <!-- AVAILABLE JOBS POOL -->
-      <section class="card mb-6">
-        <div class="card__head">
-          <h2>📦 Available Delivery Jobs Pool (${availableJobs.length})</h2>
-          <span class="badge badge--green">Live Incoming Jobs</span>
-        </div>
-        <div class="card__body">
-          ${availableJobs.length ? `
-            <div class="grid gap-4">
-              ${availableJobs.map(j => `
-                <div class="card card--pad" style="border-left:4px solid var(--green-600);box-shadow:var(--shadow-sm);background:#fff">
-                  <div class="flex justify-between items-center wrap gap-2 mb-3">
-                    <div>
-                      <strong>Job ${escapeHtml(j.id)}</strong> · <span class="badge badge--light">${escapeHtml(j.vehicle_type || 'Pickup / Boda')}</span>
-                      <span class="badge badge--green ml-2">📍 Ready for Pickup</span>
-                    </div>
-                    <div class="price" style="font-size:var(--fs-lg);color:var(--green-800)">
-                      ${formatKES(j.rider_earns || 1350)} <small style="font-size:12px;color:var(--ink-500)">payout</small>
-                    </div>
-                  </div>
-
-                  <div class="grid-2 gap-3 small mb-4">
-                    <div><span class="muted">📍 Pickup:</span> <strong>${escapeHtml(j.pickup_location)}, ${escapeHtml(j.pickup_county)}</strong></div>
-                    <div><span class="muted">🏁 Drop-off:</span> <strong>${escapeHtml(j.dropoff_location)}, ${escapeHtml(j.dropoff_county)}</strong></div>
-                    <div><span class="muted">🛣️ Est. Distance:</span> <strong>${j.distance_km || 30} km</strong></div>
-                    <div><span class="muted">⚖️ Cargo:</span> <strong>~${j.weight_kg || 80} kg produce</strong></div>
-                  </div>
-
-                  <div class="flex justify-between items-center wrap gap-2 pt-3" style="border-top:1px solid var(--border-light)">
-                    <span class="small muted">Order: <strong>${escapeHtml(j.order_id || j.orders?.reference || 'SS-24090')}</strong></span>
-                    <button class="btn btn--primary btn--lg" data-btn-accept="${j.id}">
-                      Accept Delivery Job (${formatKES(j.rider_earns || 1350)})
-                    </button>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          ` : `
-            <div style="padding:28px;text-align:center">
-              <p class="muted">No new unassigned orders right now. When a buyer places an order, it pops up here in real time!</p>
-            </div>`}
-        </div>
-      </section>
-    `;
-
-    activeJobs.forEach(j => {
-      const mapEl = document.getElementById(`mapMount-${j.id}`);
-      if (mapEl) {
-        renderRouteMap(mapEl, {
-          pickupCounty: j.pickup_county || 'Uasin Gishu',
-          pickupLocation: j.pickup_location || 'Moiben Farm Depot',
-          dropoffCounty: j.dropoff_county || 'Nairobi',
-          dropoffLocation: j.dropoff_location || 'Embakasi',
-          status: j.status === 'delivered' ? 'Delivered' : j.status === 'picked_up' ? 'Out for Delivery' : 'Rider Assigned',
-          riderName: user.fullName || 'Kevin Kipchirchir',
-          riderPhone: user.phone || '+254712345006'
-        });
-      }
-    });
-
-    document.querySelectorAll('[data-btn-accept]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const jobId = btn.dataset.btnAccept;
-        btn.disabled = true;
-        btn.innerHTML = 'Claiming…';
-
-        const job = store.updateDeliveryJob(jobId, { status: 'accepted', rider_id: user.id });
-        if (job?.order_id) {
-          const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
-          const order = store.getOrder(job.order_id);
-          const timeline = order?.timeline || [];
-          timeline.push({ label: `Rider assigned (${user.fullName})`, at: now });
-          store.updateOrder(job.order_id, {
-            status: 'Rider Assigned',
-            riderName: user.fullName,
-            riderPhone: user.phone || '+254712345006',
-            timeline
-          });
-        }
-
-        toast('🎉 Delivery Job Claimed! Proceed to pickup.', 'success');
-        renderRiderHub();
-      });
-    });
-
-    document.querySelectorAll('[data-btn-pickup]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const jobId = btn.dataset.btnPickup;
-        btn.disabled = true;
-        btn.innerHTML = 'Updating…';
-
-        const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
-        const job = store.updateDeliveryJob(jobId, { status: 'picked_up', pickup_at: now });
-        if (job?.order_id) {
-          const order = store.getOrder(job.order_id);
-          const timeline = order?.timeline || [];
-          timeline.push({ label: 'Produce picked up by rider · Out for delivery 🚚', at: now });
-          store.updateOrder(job.order_id, {
-            status: 'Out for Delivery',
-            timeline
-          });
-        }
-
-        toast('📦 Marked as Picked Up! Buyer can now track your live GPS route.', 'success');
-        renderRiderHub();
-      });
-    });
-
-    document.querySelectorAll('[data-btn-deliver]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const jobId = btn.dataset.btnDeliver;
-        const yes = await confirmDialog({
-          title: 'Confirm Delivery',
-          message: 'Have you handed over the produce safely to the buyer?',
-          confirmLabel: 'Yes, Delivered'
-        });
-        if (!yes) return;
-
-        btn.disabled = true;
-        btn.innerHTML = 'Confirming…';
-
-        const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
-        const job = store.updateDeliveryJob(jobId, { status: 'delivered', delivered_at: now });
-        if (job?.order_id) {
-          const order = store.getOrder(job.order_id);
-          const timeline = order?.timeline || [];
-          timeline.push({ label: 'Rider delivered produce · Awaiting buyer confirmation 🎯', at: now });
-          store.updateOrder(job.order_id, {
-            status: 'Delivered',
-            timeline
-          });
-        }
-
-        toast('🎯 Delivery Completed! Buyer prompted to confirm receipt.', 'success');
-        renderRiderHub();
-      });
-    });
   }
 
-  store.subscribe((event) => {
-    if (['orders', 'delivery-jobs'].includes(event)) {
-      toast('🔔 New Order Update in Rider Hub!', 'info');
-      renderRiderHub();
-    }
+  document.getElementById('deliverBtn')?.addEventListener('click', async () => {
+    const yes = await confirmDialog({
+      title: 'Confirm Delivery',
+      message: 'Have you handed over the produce safely to the buyer?',
+      confirmLabel: 'Yes, Delivered'
+    });
+    if (!yes) return;
+
+    document.getElementById('statusPill').className = 'badge badge--green';
+    document.getElementById('statusPill').textContent = '🎯 Delivered';
+    document.getElementById('deliveryStatus').className = 'badge badge--green';
+    document.getElementById('deliveryStatus').textContent = '✅ Delivered';
+    document.getElementById('deliverBtn').style.display = 'none';
+
+    store.updateOrder('SS-24081', { status: 'Delivered' });
+    toast('🎯 Delivery completed! Buyer prompted to confirm receipt.', 'success');
   });
 
-  renderRiderHub();
+  document.getElementById('claimJobBtn')?.addEventListener('click', () => {
+    document.getElementById('claimJobBtn').disabled = true;
+    document.getElementById('claimJobBtn').innerHTML = '✅ Job Claimed';
+    toast('🎉 Delivery Job Claimed! Added to your active trips.', 'success');
+  });
+
+  initMap();
 </script>
 </body>
-</html>  
+</html>
