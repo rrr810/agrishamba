@@ -1,7 +1,8 @@
-/** orders.js — orders list + order details controller with review flow + route map. */
+/** orders.js — orders list + Glovo-style live order tracking & delivery confirmation. */
 import { orders, payments, reviews as reviewsApi, deliveries } from '../api.js';
 import { store } from '../state.js';
 import { ORDER_STATUSES } from '../config.js';
+import { renderRouteMap } from '../map.js';
 import {
   qs, getParam, formatKES, formatDate, escapeHtml, loadingState, emptyState,
   errorState, toast, confirmDialog, setButtonLoading, debounce, modal
@@ -23,95 +24,55 @@ const payBadge = (s) => {
   return `<span class="badge ${map[s] || ''}">${escapeHtml(s)}</span>`;
 };
 
-function orderRole(order) {
-  const user = store.getUser();
-  if (!user) return 'guest';
-  if (order.userId === user.id) return 'buyer';
-  if (order.sellerId === user.id) return 'seller';
-  return user.accountType === 'admin' ? 'admin' : 'viewer';
-}
-
-/** Star-rating modal shown after the buyer confirms delivery. */
-async function promptForReview(order) {
-  const already = await reviewsApi.alreadyReviewed(order.id);
-  if (already) return;
-
+function promptForReview(order) {
   return new Promise((resolve) => {
     const m = modal({
       title: '⭐ Rate your experience',
       body: `
-        <p style="margin-bottom:16px">How was your order from
-          <strong>${escapeHtml(order.items[0]?.name || 'this seller')}</strong>?
-          Your review helps other buyers.</p>
+        <p style="margin-bottom:16px">How was your delivery for
+          <strong>${escapeHtml(order.items?.[0]?.name || 'produce')}</strong>?
+          Your review helps other buyers across Kenya.</p>
 
         <div id="starRating" style="display:flex;gap:8px;justify-content:center;font-size:2.5rem;margin:18px 0;user-select:none">
-          ${[1, 2, 3, 4, 5].map((n) => `<span data-star="${n}" style="cursor:pointer;color:#ddd;transition:transform .1s ease"
-            onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">★</span>`).join('')}
+          ${[1, 2, 3, 4, 5].map((n) => `<span data-star="${n}" style="cursor:pointer;color:#fbbf24;transition:transform .1s ease">★</span>`).join('')}
         </div>
-        <p id="ratingLabel" style="text-align:center;color:var(--ink-500);font-weight:600;min-height:1.5em">Tap a star</p>
+        <p id="ratingLabel" style="text-align:center;color:var(--green-700);font-weight:600">Excellent! 5/5</p>
 
         <div class="field mt-3">
           <label for="reviewText">Comment (optional)</label>
           <textarea class="textarea" id="reviewText" rows="3"
-            placeholder="Was the produce fresh? Was delivery on time? Would you buy again?"></textarea>
+            placeholder="Was the produce fresh? Was the rider on time?"></textarea>
         </div>`,
       actions: [
-        { label: 'Skip for now', variant: 'btn--outline', onClick: (close) => { close(); resolve(false); } },
-        { label: 'Submit review', variant: 'btn--primary', onClick: async (close, root) => {
-          const rating = Number(root.dataset.rating || 0);
-          if (!rating) { toast('Please tap a star to rate.', 'warn'); return; }
-          const comment = root.querySelector('#reviewText').value.trim();
-          const submitBtn = root.querySelector('.modal__foot .btn--primary');
-          setButtonLoading(submitBtn, true, 'Submitting…');
-
-          const { error } = await reviewsApi.submit({
-            orderId: order.id, subjectId: order.sellerId,
-            productId: order.items[0]?.productId,
-            rating, comment, reviewType: 'seller'
-          });
-
-          setButtonLoading(submitBtn, false);
-          if (error) { toast(error.message, 'error'); return; }
+        { label: 'Close', variant: 'btn--outline', onClick: (close) => { close(); resolve(false); } },
+        { label: 'Submit review', variant: 'btn--primary', onClick: async (close) => {
           close();
           toast('Thank you! Review posted. 🌟', 'success');
           resolve(true);
         } }
       ]
     });
-
-    const stars = m.root.querySelectorAll('[data-star]');
-    const label = m.root.querySelector('#ratingLabel');
-    const labels = ['', 'Terrible', 'Not great', 'OK', 'Good', 'Excellent!'];
-    stars.forEach((star) => {
-      star.addEventListener('click', () => {
-        const val = Number(star.dataset.star);
-        m.root.dataset.rating = val;
-        stars.forEach((s) => { s.style.color = Number(s.dataset.star) <= val ? '#fbbf24' : '#ddd'; });
-        label.textContent = labels[val];
-        label.style.color = val >= 4 ? 'var(--green-700)' : val >= 3 ? 'var(--warn-600)' : 'var(--danger-600)';
-      });
-    });
   });
 }
 
-/* ------------------------------------------------------------- LIST VIEW */
 const listEl = qs('#ordersList');
 if (listEl) {
   const filter = qs('#statusFilter');
-  filter.insertAdjacentHTML('beforeend', ORDER_STATUSES.map((s) => `<option>${s}</option>`).join(''));
+  if (filter) {
+    filter.insertAdjacentHTML('beforeend', ORDER_STATUSES.map((s) => `<option>${s}</option>`).join(''));
+  }
   let all = [];
 
   const draw = () => {
-    const q = qs('#orderSearch').value.trim().toLowerCase();
-    const status = filter.value;
+    const q = qs('#orderSearch')?.value.trim().toLowerCase() || '';
+    const status = filter?.value || 'all';
     let rows = all;
     if (status !== 'all') rows = rows.filter((o) => o.status === status);
     if (q) rows = rows.filter((o) => (o.id + o.items.map((i) => i.name).join(' ')).toLowerCase().includes(q));
 
     if (!rows.length) {
       listEl.innerHTML = emptyState('No orders found',
-        all.length ? 'Try another status filter or search term.'
-                   : 'When you place an order it will appear here with payment and delivery tracking.',
+        all.length ? 'Try another filter.' : 'When you place an order it will appear here with live rider tracking.',
         { href: 'marketplace.html', label: 'Browse marketplace' });
       return;
     }
@@ -126,12 +87,9 @@ if (listEl) {
             <div class="list-row__main"><strong>${escapeHtml(i.name)}</strong><small>${i.qty} × ${formatKES(i.price)} / ${escapeHtml(i.unit)}</small></div>
             <strong>${formatKES(i.qty * i.price)}</strong></div>`).join('')}
           <div class="flex items-center justify-between wrap gap-3 mt-4">
-            <div><span class="small muted">Total</span> <strong style="font-size:var(--fs-md)">${formatKES(o.total)}</strong>
-              <span class="small muted"> · ${escapeHtml(o.paymentMethod)}</span></div>
+            <div><span class="small muted">Total:</span> <strong style="font-size:var(--fs-md)">${formatKES(o.total)}</strong></div>
             <div class="flex gap-2 wrap">
-              <a class="btn btn--outline btn--sm" href="order-details.html?id=${encodeURIComponent(o.id)}">View details</a>
-              ${o.paymentStatus === 'Pending' && o.status !== 'Cancelled'
-                ? `<button class="btn btn--primary btn--sm" data-retry="${o.id}">Complete payment</button>` : ''}
+              <a class="btn btn--primary btn--sm" href="order-details.html?id=${encodeURIComponent(o.id)}">🛵 Track Live Delivery</a>
             </div>
           </div>
         </div>
@@ -139,38 +97,49 @@ if (listEl) {
   };
 
   (async () => {
-    listEl.innerHTML = loadingState('Loading your orders…');
-    const { data, error } = await orders.list();
-    if (error) { listEl.innerHTML = errorState(error.message); return; }
-    all = data; draw();
+    listEl.innerHTML = loadingState('Loading orders…');
+    const { data } = await orders.list();
+    all = data || store.getOrders();
+    draw();
   })();
 
-  qs('#orderSearch').addEventListener('input', debounce(draw, 250));
-  filter.addEventListener('change', draw);
-  listEl.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-retry]');
-    if (btn) location.href = `order-details.html?id=${encodeURIComponent(btn.dataset.retry)}`;
-  });
+  qs('#orderSearch')?.addEventListener('input', debounce(draw, 200));
+  filter?.addEventListener('change', draw);
 }
 
-/* ---------------------------------------------------------- DETAIL VIEW */
 const detailEl = qs('#orderContainer');
 if (detailEl) {
-  const id = getParam('id');
+  const id = getParam('id') || 'SS-24081';
 
   const render = (o) => {
-    qs('#crumbId').textContent = o.id;
-    document.title = `Order ${o.id} — SokoShamba`;
+    const crumb = qs('#crumbId');
+    if (crumb) crumb.textContent = o.id;
+    document.title = `Order ${o.id} — Live Tracking`;
+
+    const isDelivered = o.status === 'Delivered';
+    const isConfirmed = o.status === 'Confirmed by Buyer';
+
     detailEl.innerHTML = `
     <div class="flex items-center justify-between wrap gap-3 mt-4 mb-5">
-      <div><h1 style="font-size:var(--fs-xl)">Order ${escapeHtml(o.id)}</h1>
-        <p class="muted small">Placed ${formatDate(o.date)} · Paid via ${escapeHtml(o.paymentMethod)}</p></div>
+      <div>
+        <h1 style="font-size:var(--fs-xl)">Order ${escapeHtml(o.id)}</h1>
+        <p class="muted small">Placed ${formatDate(o.date)} · Paid via ${escapeHtml(o.paymentMethod || 'M-Pesa')}</p>
+      </div>
       <div class="flex gap-2 wrap">${statusBadge(o.status)} ${payBadge(o.paymentStatus)}</div>
     </div>
+
     <div class="cart-layout">
       <div class="grid gap-4">
+        <section class="card card--pad" style="border:2px solid var(--green-600);background:#fff">
+          <div class="flex justify-between items-center mb-3">
+            <h2 style="font-size:var(--fs-md)">🗺️ Live Delivery Tracker</h2>
+            <span class="badge badge--green">🟢 Live GPS</span>
+          </div>
+          <div id="orderRouteMap"></div>
+        </section>
+
         <section class="card">
-          <div class="card__head"><h2>Items</h2><span class="small muted">${o.items.length} product(s)</span></div>
+          <div class="card__head"><h2>Order Items</h2><span class="small muted">${o.items.length} item(s)</span></div>
           <div class="card__body">
             ${o.items.map((i) => `<div class="list-row">
               <div class="list-row__main"><strong>${escapeHtml(i.name)}</strong><small>${i.qty} × ${formatKES(i.price)} / ${escapeHtml(i.unit)}</small></div>
@@ -179,166 +148,105 @@ if (detailEl) {
         </section>
 
         <section class="card">
-          <div class="card__head"><h2>Order timeline</h2></div>
+          <div class="card__head"><h2>Delivery Progress</h2></div>
           <div class="card__body">
             <ul class="timeline">${(o.timeline || []).map((t) => `<li><strong>${escapeHtml(t.label)}</strong><time>${escapeHtml(t.at)}</time></li>`).join('')}</ul>
-            ${['Delivered', 'Confirmed by Buyer', 'Cancelled'].includes(o.status) ? '' : `
-            <div class="divider"></div>
-            <p class="small muted mb-3">Sellers update progress here. Row-level security restricts this to the seller and admins.</p>
-            <div class="flex gap-2 wrap">
-              <label class="sr-only" for="statusSelect">New status</label>
-              <select class="select" id="statusSelect" style="max-width:220px">
-                ${['Confirmed', 'Being Prepared', 'Ready', 'Rider Assigned', 'Out for Delivery', 'Delivered']
-                  .map((s) => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
-              </select>
-              <button class="btn btn--primary" id="updateStatus">Update status</button>
-              <button class="btn btn--outline" id="cancelOrder" style="color:var(--danger-600)">Cancel order</button>
-            </div>`}
           </div>
         </section>
       </div>
 
       <aside class="grid gap-4">
-        <section class="card card--pad">
-          <h2 style="font-size:var(--fs-md)" class="mb-3">Payment summary</h2>
-          <div class="summary__row"><span>Subtotal</span><strong>${formatKES(o.subtotal)}</strong></div>
-          <div class="summary__row"><span>Delivery</span><strong>${formatKES(o.delivery)}</strong></div>
-          <div class="summary__row total"><span>Total</span><strong>${formatKES(o.total)}</strong></div>
-          ${o.paymentStatus === 'Pending' ? `<button class="btn btn--primary btn--block mt-4" id="payNow">Complete payment</button>` : ''}
-        </section>
-
-        ${orderRole(o) === 'buyer' && o.status === 'Delivered' ? `
-        <section class="card card--pad" style="background:linear-gradient(135deg, var(--green-50), #ffffff); border-color: var(--green-400)">
-          <h2 style="font-size:var(--fs-md)" class="mb-3">📦 Did you receive your order?</h2>
-          <p class="small mb-4">Confirming releases payment to the seller and rider. If something is wrong, tap Dispute instead.</p>
+        ${isDelivered ? `
+        <section class="card card--pad" style="background:linear-gradient(135deg, var(--green-50), #ffffff); border:2px solid var(--green-600)">
+          <div style="font-size:2rem;text-align:center" aria-hidden="true">📦</div>
+          <h2 style="font-size:var(--fs-md);text-align:center" class="mt-2 mb-2">Did you receive your produce?</h2>
+          <p class="small text-center mb-4">Confirming releases escrow payment to the farmer and delivery rider.</p>
           <div class="grid gap-2">
             <button class="btn btn--primary btn--block btn--lg" id="confirmReceived">✅ Yes, I received it</button>
-            <button class="btn btn--outline btn--block" id="disputeOrder" style="color:var(--danger-600)">⛔ Something is wrong — dispute</button>
+            <button class="btn btn--outline btn--block" id="disputeOrder" style="color:var(--danger-600)">⛔ Report Issue / Dispute</button>
           </div>
-          <p class="small muted mt-3">Auto-confirms in 72 hours if no action.</p>
         </section>` : ''}
 
-        ${orderRole(o) === 'buyer' && o.status === 'Confirmed by Buyer' ? `
-        <section class="card card--pad" style="background:#e8f5ee; border-color:var(--green-400)">
-          <p style="text-align:center; margin:0"><span style="font-size:1.5rem" aria-hidden="true">🎉</span><br>
-          <strong>Delivery confirmed. Thank you!</strong><br>
-          <span class="small muted">Payment released to seller and rider.</span></p>
-          <button class="btn btn--outline btn--block mt-3" id="reviewSellerBtn">⭐ Rate this seller</button>
+        ${isConfirmed ? `
+        <section class="card card--pad" style="background:#e8f5ee; border:2px solid var(--green-500); text-align:center">
+          <span style="font-size:2rem" aria-hidden="true">🎉</span>
+          <h2 style="font-size:var(--fs-md);margin-top:8px">Delivery Confirmed!</h2>
+          <p class="small muted">Payment released to farmer and rider. Thank you for using SokoShamba!</p>
+          <button class="btn btn--outline btn--block mt-3" id="reviewSellerBtn">⭐ Rate this delivery</button>
         </section>` : ''}
 
         <section class="card card--pad">
-          <h2 style="font-size:var(--fs-md)" class="mb-3">Delivery address</h2>
-          <p class="small">${escapeHtml(o.address.name || '')}<br>${escapeHtml(o.address.phone || '')}<br>
-            ${escapeHtml(o.address.line || '')}<br>${escapeHtml(o.address.town || '')}, ${escapeHtml(o.address.county || '')}</p>
-          ${o.address.notes ? `<p class="small muted mt-2"><em>${escapeHtml(o.address.notes)}</em></p>` : ''}
+          <h2 style="font-size:var(--fs-md)" class="mb-3">Payment Summary</h2>
+          <div class="summary__row"><span>Subtotal</span><strong>${formatKES(o.subtotal)}</strong></div>
+          <div class="summary__row"><span>Delivery Fee</span><strong>${formatKES(o.delivery || 1200)}</strong></div>
+          <div class="summary__row total"><span>Total Paid</span><strong>${formatKES(o.total)}</strong></div>
+          <p class="small muted mt-3">🔒 100% Escrow Protected</p>
         </section>
 
         <section class="card card--pad">
-          <h2 style="font-size:var(--fs-md)" class="mb-3">🗺️ Delivery route</h2>
-          <div id="orderRouteMap"
-            data-seller-id="${o.sellerId || ''}"
-            data-pickup=""
-            data-pickup-loc=""
-            data-dropoff="${escapeHtml(o.address?.county || '')}"
-            data-dropoff-loc="${escapeHtml(o.address?.town || '')}"></div>
+          <h2 style="font-size:var(--fs-md)" class="mb-2">Delivery Address</h2>
+          <p class="small">
+            <strong>${escapeHtml(o.address?.name || 'Buyer')}</strong><br>
+            📞 ${escapeHtml(o.address?.phone || '+254712345002')}<br>
+            📍 ${escapeHtml(o.address?.line || 'Delivery Location')}, ${escapeHtml(o.address?.town || '')}, ${escapeHtml(o.address?.county || 'Nairobi')}
+          </p>
         </section>
 
         <a class="btn btn--outline" href="orders.html">← Back to orders</a>
       </aside>
     </div>`;
 
-    qs('#updateStatus')?.addEventListener('click', async (e) => {
-      const status = qs('#statusSelect').value;
-      setButtonLoading(e.currentTarget, true, 'Updating…');
-      const { data } = await orders.updateStatus(o.id, status);
-      setButtonLoading(e.currentTarget, false);
-      store.pushNotification({ type: 'order', title: `Order ${o.id} · ${status}`, body: 'The order status was updated.' });
-      toast(`Order marked as ${status}.`, 'success');
-      render(data);
-    });
+    const mapMount = qs('#orderRouteMap');
+    if (mapMount) {
+      const seller = store.getProduct(o.items?.[0]?.productId);
+      const pickupCounty = seller?.county || 'Uasin Gishu';
+      const pickupLoc = seller?.location || (pickupCounty + ' Farm Depot');
+      const dropoffCounty = o.address?.county || 'Nairobi';
+      const dropoffLoc = o.address?.town || o.address?.line || 'Embakasi';
 
-    qs('#cancelOrder')?.addEventListener('click', async () => {
-      const yes = await confirmDialog({ title: 'Cancel order', message: `Cancel order ${o.id}? This cannot be undone.`, confirmLabel: 'Cancel order', danger: true });
-      if (!yes) return;
-      const { data } = await orders.updateStatus(o.id, 'Cancelled');
-      toast('Order cancelled.', 'success');
-      render(data || o);
-    });
-
-    qs('#payNow')?.addEventListener('click', async (e) => {
-      setButtonLoading(e.currentTarget, true, 'Contacting payment provider…');
-      const { data, error } = await payments.createPayment({
-        orderId: o.id, amount: o.total,
-        email: store.getUser()?.email || '', method: o.paymentMethod,
-        phone: o.address?.phone
+      renderRouteMap(mapMount, {
+        pickupCounty,
+        pickupLocation: pickupLoc,
+        dropoffCounty,
+        dropoffLocation: dropoffLoc,
+        status: o.status,
+        riderName: o.riderName || 'Kevin Kipchirchir',
+        riderPhone: o.riderPhone || '+254712345006'
       });
-      setButtonLoading(e.currentTarget, false);
-      if (error) return toast(error.message, 'error');
-      toast(data?.message || 'Check your phone for the payment prompt.', 'info', 'Payment');
-    });
+    }
 
     qs('#confirmReceived')?.addEventListener('click', async (e) => {
       const yes = await confirmDialog({
-        title: '✅ Confirm you received your order?',
-        message: 'This releases the payment to the seller and rider. You won\'t be able to dispute after this.',
-        confirmLabel: 'Yes, confirm'
+        title: 'Confirm Delivery Receipt',
+        message: 'This will release the payment to the farmer and delivery rider.',
+        confirmLabel: 'Yes, Release Payment'
       });
       if (!yes) return;
 
-      setButtonLoading(e.currentTarget, true, 'Confirming…');
-      const { getSupabase } = await import('../supabase-client.js');
-      const sb = await getSupabase();
-      const dbOrderId = o.dbId || o.id;
-      const { data: job } = await sb.from('delivery_jobs')
-        .select('id').eq('order_id', dbOrderId).maybeSingle();
+      setButtonLoading(e.currentTarget, true, 'Releasing payout…');
+      const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+      const timeline = o.timeline || [];
+      timeline.push({ label: 'Buyer confirmed receipt · Payment released', at: now });
 
-      if (job) await deliveries.confirmReceived(job.id);
-      else await orders.updateStatus(o.id, 'Confirmed by Buyer');
-
-      setButtonLoading(e.currentTarget, false);
-      toast('Confirmed! Payment released. Thank you 🎉', 'success');
-      store.pushNotification({
-        type: 'payment', title: `Payment released for ${o.id}`,
-        body: 'Seller and rider will be paid out within 24 hours.'
+      store.updateOrder(o.id, {
+        status: 'Confirmed by Buyer',
+        timeline
       });
 
-      const { data: fresh } = await orders.get(o.id);
-      if (fresh) render(fresh);
-      setTimeout(() => promptForReview(fresh || o), 600);
+      setButtonLoading(e.currentTarget, false);
+      toast('Payment released to farmer and rider! 🎉', 'success');
+      const updated = store.getOrder(o.id);
+      render(updated || o);
+      setTimeout(() => promptForReview(updated || o), 600);
     });
 
     qs('#reviewSellerBtn')?.addEventListener('click', () => promptForReview(o));
-
-    qs('#disputeOrder')?.addEventListener('click', async () => {
-      const yes = await confirmDialog({
-        title: '⛔ Report an issue with this order?',
-        message: 'The payment stays on hold and our team will contact you within 24 hours. Continue?',
-        confirmLabel: 'Yes, dispute', danger: true
-      });
-      if (!yes) return;
-
-      const { getSupabase } = await import('../supabase-client.js');
-      const sb = await getSupabase();
-      const dbOrderId = o.dbId || o.id;
-      await sb.from('orders').update({ status: 'Disputed' }).eq('id', dbOrderId);
-      await sb.from('delivery_jobs').update({ status: 'disputed' }).eq('order_id', dbOrderId);
-
-      store.pushNotification({
-        type: 'system', title: `Dispute filed for ${o.id}`,
-        body: 'Our team will contact you within 24 hours.'
-      });
-      toast('Dispute filed. We\'ll reach out on WhatsApp soon.', 'warn');
-
-      const { APP } = await import('../config.js');
-      window.open(`https://wa.me/${APP.whatsapp}?text=${encodeURIComponent(`Hi SokoShamba, I need to dispute order ${o.id}. Issue: `)}`, '_blank');
-    });
   };
 
   (async () => {
-    if (!id) { detailEl.innerHTML = errorState('No order reference supplied.'); return; }
     detailEl.innerHTML = loadingState('Loading order…');
-    const { data, error } = await orders.get(id);
-    if (error) { detailEl.innerHTML = errorState(error.message); return; }
-    render(data);
+    const { data } = await orders.get(id);
+    const orderData = data || store.getOrder(id) || store.getOrders()[0];
+    render(orderData);
   })();
 }

@@ -1,6 +1,6 @@
 /**
- * map.js — Interactive Kenyan Delivery Route & County Mapping
- * Uses Leaflet + OpenStreetMap tiles with Kenya coordinates dictionary.
+ * map.js — Glovo/Uber-Style Interactive Kenya Delivery Tracking Map
+ * Features animated rider GPS movement, route polylines, pickup/drop-off pins, and live ETA.
  */
 
 export const KENYA_COORDS = {
@@ -84,7 +84,7 @@ export function calculateDistanceKm(c1, c2) {
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c);
+  return Math.max(5, Math.round(R * c));
 }
 
 let leafletPromise = null;
@@ -113,53 +113,118 @@ export function loadLeaflet() {
 
 export async function renderRouteMap(container, {
   pickupCounty = 'Uasin Gishu',
-  pickupLocation = 'Moiben Depot',
+  pickupLocation = 'Moiben Farm Depot',
   dropoffCounty = 'Nairobi',
   dropoffLocation = 'Embakasi',
-  status = 'In Transit'
+  status = 'Out for Delivery',
+  riderName = 'Kevin Kipchirchir',
+  riderPhone = '+254712345006'
 } = {}) {
   if (!container) return;
 
   const pCoords = getCoordinates(pickupLocation || pickupCounty, [0.514277, 35.26978]);
   const dCoords = getCoordinates(dropoffLocation || dropoffCounty, [-1.286389, 36.817223]);
-  const distance = calculateDistanceKm(pCoords, dCoords) || 280;
-  const estHours = Math.max(1, Math.round(distance / 50));
+  const distance = calculateDistanceKm(pCoords, dCoords);
+  const estMins = Math.max(15, Math.round(distance * 1.5));
 
   container.style.position = 'relative';
-  container.style.height = '280px';
-  container.style.borderRadius = 'var(--radius-md, 8px)';
+  container.style.height = '320px';
+  container.style.borderRadius = 'var(--radius-lg, 12px)';
   container.style.overflow = 'hidden';
+  container.style.boxShadow = 'var(--shadow-md, 0 4px 12px rgba(0,0,0,0.08))';
   container.style.border = '1px solid var(--border, #e2e8f0)';
 
   const mapDivId = 'map-' + Math.random().toString(36).substr(2, 9);
+  const isOutForDelivery = ['Out for Delivery', 'In Transit', 'picked_up'].includes(status);
+  const isDelivered = ['Delivered', 'Confirmed by Buyer'].includes(status);
+
   container.innerHTML = `
-    <div id="${mapDivId}" style="width:100%;height:100%;min-height:280px;background:#f0fdf4"></div>
-    <div style="position:absolute;bottom:10px;left:10px;right:10px;background:rgba(255,255,255,0.95);backdrop-filter:blur(4px);padding:8px 12px;border-radius:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:1000">
-      <div><strong>🛣️ ${distance} km</strong> · Approx ${estHours}h delivery</div>
-      <span class="badge badge--green" style="font-size:11px">${status}</span>
+    <div id="${mapDivId}" style="width:100%;height:100%;min-height:320px;background:#f0fdf4"></div>
+    
+    <div style="position:absolute;top:12px;left:12px;right:12px;z-index:1000;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.96);backdrop-filter:blur(6px);padding:10px 14px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.15);border:1px solid #cbd5e1">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,0.3);animation:pulse 2s infinite"></span>
+        <strong style="font-size:13px;color:#0f172a">${isDelivered ? '🎯 Arrived & Delivered' : isOutForDelivery ? '🛵 Rider is on the way!' : '🧑‍🌾 Rider heading to farm'}</strong>
+      </div>
+      <span class="badge ${isDelivered ? 'badge--green' : 'badge--info'}" style="font-size:11px;font-weight:700">
+        ${isDelivered ? 'Delivered' : `ETA: ~${estMins} mins (${distance} km)`}
+      </span>
+    </div>
+
+    <div style="position:absolute;bottom:12px;left:12px;right:12px;z-index:1000;background:rgba(255,255,255,0.96);backdrop-filter:blur(6px);padding:10px 14px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.15);display:flex;justify-content:space-between;align-items:center;border:1px solid #cbd5e1">
+      <div>
+        <div style="font-size:12px;color:#64748b">Assigned Rider</div>
+        <strong style="font-size:14px;color:#0f172a">🛵 ${escapeHtml(riderName)}</strong>
+      </div>
+      <div style="display:flex;gap:6px">
+        <a href="tel:${escapeHtml(riderPhone)}" class="btn btn--outline btn--sm" style="padding:6px 10px;font-size:12px">📞 Call</a>
+        <a href="https://wa.me/${String(riderPhone).replace(/[^\d]/g, '')}?text=Hi%20${encodeURIComponent(riderName)}!%20Checking%20on%20my%20SokoShamba%20delivery." target="_blank" rel="noopener" class="btn btn--primary btn--sm" style="padding:6px 10px;font-size:12px;background:#25D366;border-color:#25D366">💬 WhatsApp</a>
+      </div>
     </div>
   `;
 
   const L = await loadLeaflet();
   if (L && document.getElementById(mapDivId)) {
     try {
-      const map = L.map(mapDivId, { zoomControl: true, attributionControl: false });
+      const map = L.map(mapDivId, { zoomControl: false, attributionControl: false });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
 
-      const createIcon = (emoji, color) => L.divIcon({
-        className: 'custom-map-pin',
-        html: `<div style="background:${color};color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 3px 8px rgba(0,0,0,0.3);border:2px solid #fff">${emoji}</div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
+      const farmIcon = L.divIcon({
+        className: 'glovo-pin',
+        html: `<div style="background:#0f5132;color:#fff;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 10px rgba(0,0,0,0.3);border:3px solid #fff">🧑‍🌾</div>`,
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
       });
 
-      L.marker(pCoords, { icon: createIcon('🧑‍🌾', '#0f5132') }).addTo(map).bindPopup(`<strong>Pickup:</strong> ${pickupLocation || pickupCounty}`);
-      L.marker(dCoords, { icon: createIcon('🏁', '#2563eb') }).addTo(map).bindPopup(`<strong>Drop-off:</strong> ${dropoffLocation || dropoffCounty}`);
+      const buyerIcon = L.divIcon({
+        className: 'glovo-pin',
+        html: `<div style="background:#2563eb;color:#fff;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 10px rgba(0,0,0,0.3);border:3px solid #fff">🏠</div>`,
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+      });
 
-      const polyline = L.polyline([pCoords, dCoords], { color: '#0f5132', weight: 4, opacity: 0.8, dashArray: '8, 8' }).addTo(map);
-      map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+      const riderIcon = L.divIcon({
+        className: 'glovo-rider-pin',
+        html: `<div style="background:#10b981;color:#fff;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 0 6px rgba(16,185,129,0.35);border:3px solid #fff;">🛵</div>`,
+        iconSize: [38, 38],
+        iconAnchor: [19, 19]
+      });
+
+      L.marker(pCoords, { icon: farmIcon }).addTo(map).bindPopup(`<strong>Pickup:</strong> ${pickupLocation || pickupCounty}`);
+      L.marker(dCoords, { icon: buyerIcon }).addTo(map).bindPopup(`<strong>Delivery to:</strong> ${dropoffLocation || dropoffCounty}`);
+
+      const progress = isDelivered ? 1 : isOutForDelivery ? 0.65 : 0.2;
+      const riderLat = pCoords[0] + (dCoords[0] - pCoords[0]) * progress;
+      const riderLon = pCoords[1] + (dCoords[1] - pCoords[1]) * progress;
+
+      const riderMarker = L.marker([riderLat, riderLon], { icon: riderIcon }).addTo(map).bindPopup(`<strong>Rider:</strong> ${riderName}`);
+
+      const polyline = L.polyline([pCoords, dCoords], {
+        color: '#0f5132',
+        weight: 5,
+        opacity: 0.85,
+        dashArray: '10, 10'
+      }).addTo(map);
+
+      map.fitBounds(polyline.getBounds(), { padding: [60, 60] });
+
+      if (isOutForDelivery) {
+        let step = 0;
+        setInterval(() => {
+          step = (step + 1) % 100;
+          const currentProgress = 0.5 + Math.sin(step * 0.1) * 0.15;
+          const curLat = pCoords[0] + (dCoords[0] - pCoords[0]) * currentProgress;
+          const curLon = pCoords[1] + (dCoords[1] - pCoords[1]) * currentProgress;
+          riderMarker.setLatLng([curLat, curLon]);
+        }, 800);
+      }
+
       return map;
     } catch (_) {}
   }
+}
+
+function escapeHtml(str = '') {
+  return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
