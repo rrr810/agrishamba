@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Contact &amp; support — SokoShamba</title>
+<title>Contact &amp; Support — SokoShamba</title>
 <meta name="description" content="Get help with your SokoShamba account, orders, listings or payments.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
@@ -18,9 +18,9 @@
 <main id="main">
   <section class="page-head">
     <div class="container">
-      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a><span>/</span><span>Contact</span></nav>
-      <h1>Contact &amp; support</h1>
-      <p>Questions about orders, listings, payments or partnerships — start here.</p>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href='/'>Home</a><span>/</span><span>Contact</span></nav>
+      <h1>Contact &amp; Support</h1>
+      <p>Questions about orders, listings, deliveries, payments or partnerships — we're here to help.</p>
     </div>
   </section>
 
@@ -31,9 +31,9 @@
         <div id="contactResult"></div>
         <div class="grid-2">
           <div class="field"><label for="name">Your name <span class="req">*</span></label>
-            <input class="input" id="name" name="name" autocomplete="name" required></div>
+            <input class="input" id="name" name="name" autocomplete="name" placeholder="e.g. Wanja Maina" required></div>
           <div class="field"><label for="email">Email <span class="req">*</span></label>
-            <input class="input" id="email" name="email" type="email" autocomplete="email" required></div>
+            <input class="input" id="email" name="email" type="email" autocomplete="email" placeholder="you@domain.com" required></div>
         </div>
         <div class="grid-2">
           <div class="field"><label for="phone">Phone <span class="req">*</span></label>
@@ -41,34 +41,41 @@
           <div class="field"><label for="topic">Topic <span class="req">*</span></label>
             <select class="select" id="topic" name="topic" required>
               <option value="">Select a topic</option>
-              <option>Order or delivery issue</option><option>Payment question</option>
-              <option>Listing or account help</option><option>Partnership enquiry</option>
-              <option>Report a listing or user</option><option>Something else</option>
+              <option>Order or delivery issue</option>
+              <option>Payment & M-Pesa question</option>
+              <option>Listing or farmer account help</option>
+              <option>Rider & transport inquiry</option>
+              <option>Partnership & cooperative inquiry</option>
+              <option>Something else</option>
             </select></div>
         </div>
         <div class="field"><label for="message">Message <span class="req">*</span></label>
-          <textarea class="textarea" id="message" name="message" placeholder="Tell us what happened, including any order reference." required></textarea></div>
-        <button class="btn btn--primary" type="submit">Send message</button>
-        <p class="hint mt-3">Demo mode: your message is recorded in the browser and queued as an automation event
-          instead of being emailed.</p>
+          <textarea class="textarea" id="message" name="message" rows="4" placeholder="Tell us what happened, including any order reference or details." required></textarea></div>
+        <button class="btn btn--primary btn--lg" type="submit">Send message</button>
+        <p class="hint mt-3">⚡ We respond to all inquiries within 2 hours during active business hours.</p>
       </form>
 
       <aside class="grid gap-4">
         <section class="card card--pad">
           <h2 style="font-size:var(--fs-md)" class="mb-3">Direct channels</h2>
-          <p class="small"><strong>Email</strong><br><a href="mailto:support@sokoshamba.example">support@sokoshamba.example</a></p>
-          <p class="small mt-3"><strong>Phone / WhatsApp</strong><br><a href="tel:+254700000000">+254 700 000 000</a></p>
-          <p class="small mt-3"><strong>Hours</strong><br>Mon–Sat, 8:00–18:00 EAT</p>
-          <p class="small muted mt-3">Placeholder contact details for the demo build.</p>
+          <p class="small"><strong>Support Email</strong><br><a href="mailto:support@sokoshamba.co.ke">support@sokoshamba.co.ke</a></p>
+          <p class="small mt-3"><strong>Business & Partnerships</strong><br><a href="mailto:info@sokoshamba.co.ke">info@sokoshamba.co.ke</a></p>
+          <p class="small mt-3"><strong>Phone / WhatsApp</strong><br><a href="tel:+254740793959">+254 740 793 959</a></p>
+          <p class="small mt-3"><strong>Location</strong><br>Eldoret & Nairobi, Kenya</p>
+          <p class="small mt-3"><strong>Operating Hours</strong><br>Mon–Sat, 7:00–19:00 EAT</p>
+          <div class="mt-4">
+            <a class="btn btn--primary btn--sm btn--block" href="https://wa.me/254740793959?text=Hi%20SokoShamba%20Support!%20I%20have%20an%20inquiry%20about%3A" target="_blank" rel="noopener">
+              💚 Chat on WhatsApp
+            </a>
+          </div>
         </section>
         <section class="card card--pad">
           <h2 style="font-size:var(--fs-md)" class="mb-3">Quick answers</h2>
           <ul class="small" style="display:grid;gap:10px">
-            <li><a href="orders.html">Where is my order?</a></li>
-            <li><a href="sell.html">How do I list a product?</a></li>
-            <li><a href="checkout.html">Which payment methods work?</a></li>
-            <li><a href="calculator.html">How does the farm calculator work?</a></li>
-            <li><a href="privacy.html">How is my data handled?</a></li>
+            <li><a href='/pages/orders.html'>📦 Where is my order?</a></li>
+            <li><a href='/pages/sell.html'>🌾 How do I list produce?</a></li>
+            <li><a href='/pages/checkout.html'>📱 How M-Pesa payments work</a></li>
+            <li><a href='/pages/help.html'>❓ Help Center & FAQ</a></li>
           </ul>
         </section>
       </aside>

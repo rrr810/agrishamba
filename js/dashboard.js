@@ -1,31 +1,66 @@
 /**
  * dashboard.js — shared dashboard shell + role-specific views.
- * Used by dashboard.html, farmer-, buyer-, supplier- and service-dashboard.html.
  */
-import { products, orders, wallet, adminService } from './api.js';
+import { products, orders, wallet, adminService, deliveries } from './api.js';
 import { store } from './state.js';
+import { renderRouteMap } from './map.js';
 import {
-  qs, formatKES, formatNumber, formatDate, escapeHtml, loadingState,
-  emptyState, requireAuth, initials, page
+  qs, qsa, formatKES, formatNumber, formatDate, escapeHtml, loadingState,
+  emptyState, requireAuth, initials, page, toast, confirmDialog, setButtonLoading
 } from './ui.js';
 
-const ROLE_LABEL = { farmer: 'Farmer', buyer: 'Buyer', supplier: 'Supplier', service: 'Service Provider', admin: 'Administrator' };
+const ROLE_LABEL = {
+  farmer: 'Farmer',
+  buyer: 'Buyer',
+  supplier: 'Supplier',
+  service: 'Service Provider',
+  rider: 'Rider / Transporter',
+  admin: 'Administrator'
+};
 
 export function renderSidebar(user, active) {
   const common = [
     ['Overview', 'dashboard.html', '📊'],
     ['Marketplace', 'marketplace.html', '🛒'],
     ['My Orders', 'orders.html', '📦'],
-    ['Notifications', 'notifications.html', '🔔']
+    ['Help & FAQ', 'help.html', '❓']
   ];
   const byRole = {
-    farmer: [['Farmer Home', 'farmer-dashboard.html', '🧑‍🌾'], ['Add Product', 'sell.html', '➕'], ['Farm Calculator', 'calculator.html', '🧮'], ['Advisory', 'advisory.html', '📚']],
-    buyer: [['Buyer Home', 'buyer-dashboard.html', '🛍️'], ['Saved Products', 'buyer-dashboard.html#saved', '♥'], ['Market Prices', 'market-prices.html', '📈']],
-    supplier: [['Supplier Home', 'supplier-dashboard.html', '🏪'], ['Add Product', 'sell.html', '➕'], ['Market Prices', 'market-prices.html', '📈']],
-    service: [['Provider Home', 'service-dashboard.html', '🚜'], ['Services Directory', 'services.html', '🧰']],
-    admin: [['Admin Console', 'admin.html', '🛡️']]
+    farmer: [
+      ['Farmer Home', 'farmer-dashboard.html', '🧑‍🌾'],
+      ['Add Product', 'sell.html', '➕'],
+      ['Farm Calculator', 'calculator.html', '🧮'],
+      ['Advisory', 'advisory.html', '📚']
+    ],
+    buyer: [
+      ['Buyer Home', 'buyer-dashboard.html', '🛍️'],
+      ['Saved Products', 'buyer-dashboard.html#saved', '♥'],
+      ['Market Prices', 'market-prices.html', '📈']
+    ],
+    supplier: [
+      ['Supplier Home', 'supplier-dashboard.html', '🏪'],
+      ['Add Product', 'sell.html', '➕'],
+      ['Market Prices', 'market-prices.html', '📈']
+    ],
+    rider: [
+      ['Rider Home', 'rider-dashboard.html', '🚛'],
+      ['Available Jobs', 'rider-dashboard.html#available', '📦'],
+      ['Active Routes', 'rider-dashboard.html#active', '🗺️'],
+      ['Earnings', 'rider-dashboard.html#earnings', '💰']
+    ],
+    service: [
+      ['Provider Home', 'service-dashboard.html', '🚜'],
+      ['Services Directory', 'services.html', '🧰']
+    ],
+    admin: [
+      ['Admin Console', 'admin.html', '🛡️']
+    ]
   };
-  const account = [['Profile', 'profile.html', '👤'], ['Settings', 'settings.html', '⚙️']];
+  const account = [
+    ['Profile', 'profile.html', '👤'],
+    ['Settings', 'settings.html', '⚙️']
+  ];
+
   const link = ([label, href, icon]) =>
     `<a href="${href}"${href.split('#')[0] === active ? ' class="active" aria-current="page"' : ''}><span aria-hidden="true">${icon}</span>${label}</a>`;
 
@@ -53,7 +88,16 @@ const quickAction = (icon, title, sub, href) =>
   `<a class="quick-action" href="${href}"><span aria-hidden="true">${icon}</span><strong>${title}</strong><small>${sub}</small></a>`;
 
 const statusBadge = (s) => {
-  const map = { Delivered: 'badge--green', 'Out for Delivery': 'badge--info', Confirmed: 'badge--info', Pending: 'badge--warn', Cancelled: 'badge--danger' };
+  const map = {
+    Delivered: 'badge--green',
+    'Confirmed by Buyer': 'badge--green',
+    'Out for Delivery': 'badge--info',
+    Confirmed: 'badge--info',
+    'Rider Assigned': 'badge--info',
+    'Payment Received': 'badge--green',
+    Pending: 'badge--warn',
+    Cancelled: 'badge--danger'
+  };
   return `<span class="badge ${map[s] || ''}">${escapeHtml(s)}</span>`;
 };
 
@@ -72,199 +116,220 @@ function ordersTable(rows, emptyMsg) {
     </tr>`).join('')}</tbody></table></div>`;
 }
 
-function salesChart(ordersList) {
-  const months = ['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'];
-  const base = ordersList.reduce((s, o) => s + o.total, 0) || 100000;
-  const values = months.map((m, i) => Math.round((base / 6) * (0.6 + ((i * 7) % 5) / 5)));
-  const max = Math.max(...values);
-  return `<div class="bars" role="img" aria-label="Sales by month, demo data">
-    ${values.map((v, i) => `<div class="bars__col"><div class="bars__bar" style="height:${(v / max) * 100}%"></div><small>${months[i]}</small></div>`).join('')}
-  </div><p class="small muted mt-3">Demo sales trend — replaced by real aggregates once orders are stored in Supabase.</p>`;
-}
+/* ---------------------------------------------------- RIDER DASHBOARD */
+async function riderView(user) {
+  const [{ data: availableJobs }, { data: activeJobs }, { data: completedJobs }, { data: earn }] =
+    await Promise.all([
+      deliveries.available(),
+      deliveries.myActive(),
+      deliveries.myCompleted(),
+      deliveries.earnings()
+    ]);
 
-/* ------------------------------------------------------------ ROLE VIEWS */
-async function farmerView(user) {
-  const [{ data: mine }, { data: ordersList }, { data: bal }] = await Promise.all([products.mine(), orders.list(), wallet.balance()]);
-  const sellerOrders = ordersList.filter((o) => o.sellerId === user.id);
-  const pending = sellerOrders.filter((o) => ['Pending', 'Confirmed', 'Processing'].includes(o.status));
-  const sales = sellerOrders.filter((o) => o.paymentStatus === 'Paid').reduce((s, o) => s + o.subtotal, 0);
-
-  return `
+  const html = `
   <div class="dash-header">
-    <div><h1>Karibu, ${escapeHtml(user.fullName.split(' ')[0])} 👋</h1>
-      <p class="muted small">Your farm business at a glance. ${escapeHtml(user.location || '')} ${escapeHtml(user.county || '')}</p></div>
-    <a class="btn btn--primary" href="sell.html">➕ Add product</a>
+    <div>
+      <h1>Rider &amp; Logistics Hub 🚛</h1>
+      <p class="muted small">${escapeHtml(user.fullName)} · Active in <strong>${escapeHtml(user.county || 'Uasin Gishu')}</strong></p>
+    </div>
+    <div class="flex gap-2">
+      <span class="badge badge--green" style="font-size:13px;padding:6px 12px">🟢 Online &amp; Ready</span>
+    </div>
   </div>
 
   <div class="stat-grid">
-    ${statCard('Total sales', formatKES(sales), 'Paid orders, all time')}
-    ${statCard('Active listings', formatNumber(mine.length), 'Products visible to buyers', 'stat--info')}
-    ${statCard('Pending orders', formatNumber(pending.length), 'Awaiting your action', 'stat--gold')}
-    ${statCard('Available balance', formatKES(bal.available), `${formatKES(bal.pending)} pending clearance`, 'stat--info')}
+    ${statCard('Total Earned', formatKES(earn.total), 'Lifetime payouts')}
+    ${statCard('Available Balance', formatKES(earn.released), 'Ready for M-Pesa withdrawal', 'stat--info')}
+    ${statCard('Active Deliveries', formatNumber(activeJobs.length), 'In transit right now', activeJobs.length ? 'stat--gold' : '')}
+    ${statCard('Completed Jobs', formatNumber(earn.jobs || completedJobs.length), 'Successful deliveries', 'stat--info')}
   </div>
 
-  <section class="card">
-    <div class="card__head"><h2>Quick actions</h2></div>
-    <div class="card__body"><div class="quick-actions">
-      ${quickAction('➕', 'Add Product', 'List new produce', 'sell.html')}
-      ${quickAction('📦', 'View Orders', 'Track buyer orders', 'orders.html')}
-      ${quickAction('🧮', 'Farm Calculator', 'Plan season costs', 'calculator.html')}
-      ${quickAction('📚', 'Advisory', 'Read farming guides', 'advisory.html')}
-      ${quickAction('🛒', 'Marketplace', 'See what buyers want', 'marketplace.html')}
-    </div></div>
+  <!-- ACTIVE DELIVERIES -->
+  <section class="card mb-6" id="active">
+    <div class="card__head">
+      <h2>🚀 My Active Deliveries (${activeJobs.length})</h2>
+      <span class="badge ${activeJobs.length ? 'badge--info' : ''}">${activeJobs.length ? 'In Progress' : 'No active trip'}</span>
+    </div>
+    <div class="card__body">
+      ${activeJobs.length ? activeJobs.map((j) => {
+        const order = j.orders || {};
+        const buyer = order.buyer || order.address || {};
+        const seller = order.seller || {};
+        const isPickedUp = ['picked_up', 'out_for_delivery', 'delivered'].includes(j.status);
+        const isDelivered = j.status === 'delivered';
+
+        return `
+        <article class="order-card mb-4" style="border:2px solid var(--green-600);background:var(--surface)">
+          <div class="order-card__head" style="background:var(--green-50)">
+            <div>
+              <strong style="font-size:var(--fs-md)">Job ${escapeHtml(j.id)} · Order ${escapeHtml(j.order_id || order.reference)}</strong>
+              <p class="small muted">Vehicle: <strong>${escapeHtml(j.vehicle_type || 'Pickup')}</strong> · Weight: ~${j.weight_kg || 100}kg · Distance: ${j.distance_km || 40}km</p>
+            </div>
+            <div class="text-right">
+              <span class="badge badge--green" style="font-size:14px;padding:6px 12px">Payout: ${formatKES(j.rider_earns)}</span>
+              <div class="mt-1">${statusBadge(isDelivered ? 'Delivered' : isPickedUp ? 'Out for Delivery' : 'Rider Assigned')}</div>
+            </div>
+          </div>
+
+          <div class="card__body">
+            <div class="grid-2 gap-4 mb-4">
+              <!-- PICKUP -->
+              <div style="background:#f8fafc;padding:14px;border-radius:var(--radius-md);border-left:4px solid var(--green-700)">
+                <div class="flex justify-between items-center mb-2">
+                  <strong style="color:var(--green-900)">1. Pickup (Farmer)</strong>
+                  ${isPickedUp ? '<span class="badge badge--green">✅ Picked Up</span>' : '<span class="badge badge--warn">Pending Pickup</span>'}
+                </div>
+                <p class="small">
+                  <strong>${escapeHtml(seller.full_name || 'Farmer')}</strong><br>
+                  📍 ${escapeHtml(j.pickup_location || 'Farm Depot')}, ${escapeHtml(j.pickup_county || 'County')}<br>
+                  📞 ${escapeHtml(seller.phone || '+254712345001')}
+                </p>
+                <div class="flex gap-2 mt-3">
+                  <a class="btn btn--outline btn--sm" href="tel:${escapeHtml(seller.phone || '0712345001')}">📞 Call</a>
+                  ${!isPickedUp ? `<button class="btn btn--primary btn--sm" data-action="rider-pickup" data-id="${j.id}">✅ Confirm Pickup</button>` : ''}
+                </div>
+              </div>
+
+              <!-- DROPOFF -->
+              <div style="background:#f8fafc;padding:14px;border-radius:var(--radius-md);border-left:4px solid var(--primary-600)">
+                <div class="flex justify-between items-center mb-2">
+                  <strong style="color:var(--primary-900)">2. Delivery (Buyer)</strong>
+                  ${isDelivered ? '<span class="badge badge--green">✅ Delivered</span>' : isPickedUp ? '<span class="badge badge--info">On the Way</span>' : '<span class="badge badge--warn">Next Step</span>'}
+                </div>
+                <p class="small">
+                  <strong>${escapeHtml(buyer.full_name || buyer.name || 'Buyer')}</strong><br>
+                  📍 ${escapeHtml(j.dropoff_location || 'Buyer Address')}, ${escapeHtml(j.dropoff_county || 'County')}<br>
+                  📞 ${escapeHtml(buyer.phone || '+254712345002')}
+                </p>
+                <div class="flex gap-2 mt-3">
+                  <a class="btn btn--outline btn--sm" href="tel:${escapeHtml(buyer.phone || '0712345002')}">📞 Call</a>
+                  ${isPickedUp && !isDelivered ? `<button class="btn btn--primary btn--sm" data-action="rider-deliver" data-id="${j.id}">🎯 Confirm Delivery</button>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <!-- MAP -->
+            <div class="mt-4">
+              <h3 style="font-size:var(--fs-sm);margin-bottom:8px">🗺️ Live Delivery Route</h3>
+              <div class="rider-map-container"
+                id="riderMap-${j.id}"
+                data-pickup-county="${escapeHtml(j.pickup_county || '')}"
+                data-pickup-loc="${escapeHtml(j.pickup_location || '')}"
+                data-dropoff-county="${escapeHtml(j.dropoff_county || '')}"
+                data-dropoff-loc="${escapeHtml(j.dropoff_location || '')}"
+                data-status="${isDelivered ? 'Delivered' : isPickedUp ? 'In Transit' : 'Pickup Pending'}"></div>
+            </div>
+          </div>
+        </article>`;
+      }).join('') : `
+        <div class="text-center" style="padding:24px">
+          <div style="font-size:2.5rem" aria-hidden="true">🛵</div>
+          <h3 class="mt-2">No active delivery right now</h3>
+          <p class="small muted mt-1">Accept a delivery job from the available pool below.</p>
+        </div>`}
+    </div>
   </section>
 
-  <section class="card">
-    <div class="card__head"><h2>Recent orders</h2><a class="btn btn--outline btn--sm" href="orders.html">All orders</a></div>
-    <div class="card__body">${ordersTable(sellerOrders.slice(0, 5), 'No orders yet. Share your listings to attract buyers.')}</div>
-  </section>
+  <!-- AVAILABLE JOBS POOL -->
+  <section class="card mb-6" id="available">
+    <div class="card__head">
+      <h2>📦 Available Delivery Jobs (${availableJobs.length})</h2>
+      <span class="small muted">Claim a job to lock in your payout</span>
+    </div>
+    <div class="card__body">
+      ${availableJobs.length ? `
+        <div class="grid gap-4">
+          ${availableJobs.map((j) => `
+            <div class="card card--pad" style="border-left:4px solid var(--green-600);box-shadow:var(--shadow-sm)">
+              <div class="flex justify-between items-center wrap gap-2 mb-3">
+                <div>
+                  <strong>Job ${escapeHtml(j.id)}</strong> · <span class="badge badge--light">${escapeHtml(j.vehicle_type || 'Pickup')}</span>
+                  ${j.isNearby ? '<span class="badge badge--green ml-2">📍 Nearby</span>' : ''}
+                </div>
+                <div class="price" style="font-size:var(--fs-lg);color:var(--green-800)">
+                  ${formatKES(j.rider_earns)} <small style="font-size:12px;color:var(--ink-500)">payout</small>
+                </div>
+              </div>
 
-  <div class="grid gap-4" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
-    <section class="card"><div class="card__head"><h2>Sales summary</h2><span class="badge badge--demo">Demo</span></div>
-      <div class="card__body">${salesChart(sellerOrders)}</div></section>
-    <section class="card"><div class="card__head"><h2>My products</h2><a class="btn btn--outline btn--sm" href="sell.html">Manage</a></div>
-      <div class="card__body">${mine.length ? mine.slice(0, 5).map((p) => `
-        <div class="list-row">
-          <img class="list-row__img" src="${p.images?.[0] || ''}" alt="" loading="lazy" data-emoji="${p.emoji || '🌿'}" data-label="${escapeHtml(p.name)}">
-          <div class="list-row__main"><strong>${escapeHtml(p.name)}</strong><small>${formatKES(p.price)} / ${escapeHtml(p.unit)} · ${formatNumber(p.quantity)} left</small></div>
-          <a class="btn btn--ghost btn--sm" href="product.html?id=${encodeURIComponent(p.id)}">View</a></div>`).join('')
-        : emptyState('No listings yet', 'Publish your first product to start selling.', { href: 'sell.html', label: 'Add a product' })}</div></section>
-  </div>`;
+              <div class="grid-2 gap-3 small mb-4">
+                <div><span class="muted">📍 Pickup:</span> <strong>${escapeHtml(j.pickup_location)}, ${escapeHtml(j.pickup_county)}</strong></div>
+                <div><span class="muted">🏁 Drop-off:</span> <strong>${escapeHtml(j.dropoff_location)}, ${escapeHtml(j.dropoff_county)}</strong></div>
+                <div><span class="muted">🛣️ Est. Distance:</span> <strong>${j.distance_km || 30} km</strong></div>
+                <div><span class="muted">⚖️ Cargo Weight:</span> <strong>~${j.weight_kg || 80} kg</strong></div>
+              </div>
+
+              <div class="flex justify-between items-center wrap gap-2 pt-3" style="border-top:1px solid var(--border-light)">
+                <span class="small muted">Order: <strong>${escapeHtml(j.order_id || j.orders?.reference || '')}</strong></span>
+                <button class="btn btn--primary" data-action="rider-accept" data-id="${j.id}">
+                  Accept Delivery Job (${formatKES(j.rider_earns)})
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : emptyState('No new jobs in pool right now', 'All current orders have been claimed. New buyer orders will appear here automatically.', { href: 'orders.html', label: 'View all orders' })}
+    </div>
+  </section>`;
+
+  setTimeout(() => {
+    qsa('.rider-map-container').forEach((el) => {
+      renderRouteMap(el, {
+        pickupCounty: el.dataset.pickupCounty,
+        pickupLocation: el.dataset.pickupLoc,
+        dropoffCounty: el.dataset.dropoffCounty,
+        dropoffLocation: el.dataset.dropoffLoc,
+        status: el.dataset.status
+      });
+    });
+
+    qsa('[data-action="rider-accept"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        setButtonLoading(btn, true, 'Claiming job…');
+        const { error } = await deliveries.accept(btn.dataset.id);
+        setButtonLoading(btn, false);
+        if (error) return toast(error.message, 'error');
+        toast('🎉 Job accepted! Proceed to farm pickup.', 'success');
+        mountDashboard('rider');
+      });
+    });
+
+    qsa('[data-action="rider-pickup"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        setButtonLoading(btn, true, 'Updating…');
+        const { error } = await deliveries.markPickedUp(btn.dataset.id);
+        setButtonLoading(btn, false);
+        if (error) return toast(error.message, 'error');
+        toast('📦 Marked as Picked Up! Navigate to buyer drop-off.', 'success');
+        mountDashboard('rider');
+      });
+    });
+
+    qsa('[data-action="rider-deliver"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const yes = await confirmDialog({
+          title: 'Confirm Delivery',
+          message: 'Have you safely delivered the produce to the buyer?',
+          confirmLabel: 'Yes, Delivered'
+        });
+        if (!yes) return;
+
+        setButtonLoading(btn, true, 'Confirming…');
+        const { error } = await deliveries.markDelivered(btn.dataset.id);
+        setButtonLoading(btn, false);
+        if (error) return toast(error.message, 'error');
+        toast('🎯 Delivery completed! Payout will release once buyer confirms.', 'success');
+        mountDashboard('rider');
+      });
+    });
+  }, 50);
+
+  return html;
 }
 
-async function buyerView(user) {
-  const { data: ordersList } = await orders.list();
-  const mine = ordersList.filter((o) => o.userId === user.id || user.accountType === 'buyer');
-  const active = mine.filter((o) => !['Delivered', 'Cancelled'].includes(o.status));
-  const spend = mine.filter((o) => o.paymentStatus === 'Paid').reduce((s, o) => s + o.total, 0);
-  const favIds = store.getFavorites();
-  const saved = store.getProducts().filter((p) => favIds.includes(p.id));
-  const { data: recommended } = await products.list({ perPage: 4, sort: 'rating' });
-
-  return `
-  <div class="dash-header">
-    <div><h1>Welcome back, ${escapeHtml(user.fullName.split(' ')[0])}</h1>
-      <p class="muted small">Sourcing overview and saved suppliers.</p></div>
-    <a class="btn btn--primary" href="marketplace.html">Browse marketplace</a>
-  </div>
-
-  <div class="stat-grid">
-    ${statCard('Total spend', formatKES(spend), 'Paid orders, all time')}
-    ${statCard('Active orders', formatNumber(active.length), 'In progress right now', 'stat--info')}
-    ${statCard('Saved products', formatNumber(saved.length), 'Your shortlist', 'stat--gold')}
-    ${statCard('Orders placed', formatNumber(mine.length), 'Lifetime orders', 'stat--info')}
-  </div>
-
-  <section class="card"><div class="card__head"><h2>Quick actions</h2></div>
-    <div class="card__body"><div class="quick-actions">
-      ${quickAction('🛒', 'Browse Marketplace', 'Find produce & inputs', 'marketplace.html')}
-      ${quickAction('📦', 'View Orders', 'Track deliveries', 'orders.html')}
-      ${quickAction('♥', 'Saved Products', 'Your shortlist', 'buyer-dashboard.html#saved')}
-      ${quickAction('📈', 'Market Prices', 'Compare reference prices', 'market-prices.html')}
-    </div></div></section>
-
-  <section class="card"><div class="card__head"><h2>Recent purchases</h2><a class="btn btn--outline btn--sm" href="orders.html">All orders</a></div>
-    <div class="card__body">${ordersTable(mine.slice(0, 5), 'No purchases yet. Your orders will appear here.')}</div></section>
-
-  <section class="card" id="saved"><div class="card__head"><h2>Saved products</h2><span class="small muted">${saved.length} saved</span></div>
-    <div class="card__body">${saved.length ? saved.map((p) => `
-      <div class="list-row">
-        <img class="list-row__img" src="${p.images?.[0] || ''}" alt="" loading="lazy" data-emoji="${p.emoji}" data-label="${escapeHtml(p.name)}">
-        <div class="list-row__main"><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(p.seller)} · ${escapeHtml(p.county)}</small></div>
-        <div class="flex gap-2"><span class="badge">${formatKES(p.price)}</span>
-        <a class="btn btn--outline btn--sm" href="product.html?id=${encodeURIComponent(p.id)}">View</a></div></div>`).join('')
-      : emptyState('Nothing saved yet', 'Tap the heart on any listing to save it here for quick reordering.', { href: 'marketplace.html', label: 'Find products' })}</div></section>
-
-  <section class="card"><div class="card__head"><h2>Recommended for you</h2><span class="badge badge--demo">Demo ranking</span></div>
-    <div class="card__body"><div class="product-grid">${recommended.rows.map((p) => `
-      <a class="quick-action" href="product.html?id=${encodeURIComponent(p.id)}">
-        <span aria-hidden="true">${p.emoji}</span><strong>${escapeHtml(p.name)}</strong>
-        <small>${formatKES(p.price)} / ${escapeHtml(p.unit)} · ${escapeHtml(p.county)}</small></a>`).join('')}</div></div></section>`;
-}
-
-async function supplierView(user) {
-  const [{ data: mine }, { data: ordersList }] = await Promise.all([products.mine(), orders.list()]);
-  const sellerOrders = ordersList.filter((o) => o.sellerId === user.id);
-  const revenue = sellerOrders.filter((o) => o.paymentStatus === 'Paid').reduce((s, o) => s + o.subtotal, 0);
-  const lowStock = mine.filter((p) => p.quantity < 50);
-  const customers = new Set(sellerOrders.map((o) => o.userId)).size;
-
-  return `
-  <div class="dash-header">
-    <div><h1>Supplier dashboard</h1><p class="muted small">${escapeHtml(user.fullName)} · ${escapeHtml(user.county || 'Kenya')}</p></div>
-    <a class="btn btn--primary" href="sell.html">➕ Add input product</a>
-  </div>
-
-  <div class="stat-grid">
-    ${statCard('Revenue', formatKES(revenue), 'Paid supplier orders')}
-    ${statCard('Listed inputs', formatNumber(mine.length), 'Seeds, fertilizer, feed, tools', 'stat--info')}
-    ${statCard('Customers', formatNumber(customers), 'Unique buyers', 'stat--gold')}
-    ${statCard('Low stock items', formatNumber(lowStock.length), 'Below 50 units', lowStock.length ? 'stat--danger' : '')}
-  </div>
-
-  <section class="card"><div class="card__head"><h2>Orders</h2><a class="btn btn--outline btn--sm" href="orders.html">All orders</a></div>
-    <div class="card__body">${ordersTable(sellerOrders.slice(0, 6), 'No supplier orders yet.')}</div></section>
-
-  <section class="card"><div class="card__head"><h2>Stock levels</h2><a class="btn btn--outline btn--sm" href="sell.html">Update stock</a></div>
-    <div class="card__body">${mine.length ? mine.map((p) => {
-      const pct = Math.min(100, (p.quantity / 400) * 100);
-      return `<div class="mb-4"><div class="flex justify-between small"><strong>${escapeHtml(p.name)}</strong>
-        <span class="${p.quantity < 50 ? 'trend-down' : 'muted'}">${formatNumber(p.quantity)} ${escapeHtml(p.unit)}</span></div>
-        <div class="progress mt-2"><span style="width:${pct}%"></span></div></div>`;
-    }).join('') : emptyState('No inputs listed', 'Add seeds, fertilizer, feed or equipment to start supplying farmers.', { href: 'sell.html', label: 'Add a product' })}</div></section>
-
-  <section class="card"><div class="card__head"><h2>Sales summary</h2><span class="badge badge--demo">Demo</span></div>
-    <div class="card__body">${salesChart(sellerOrders)}</div></section>`;
-}
-
-async function serviceView(user) {
-  const svcs = store.getServices().filter((s) => s.providerId === user.id);
-  const all = store.getServices();
-  const list = svcs.length ? svcs : all.slice(0, 3);
-  return `
-  <div class="dash-header">
-    <div><h1>Service provider dashboard</h1><p class="muted small">Transport, machinery, storage, labour and professional services.</p></div>
-    <a class="btn btn--primary" href="services.html#list-service">➕ List a service</a>
-  </div>
-  <div class="stat-grid">
-    ${statCard('Listed services', formatNumber(list.length), 'Visible in the directory')}
-    ${statCard('Booking requests', '0', 'Bookings go live with the backend', 'stat--gold')}
-    ${statCard('Average rating', (list.reduce((s, x) => s + x.rating, 0) / (list.length || 1)).toFixed(1), 'From demo reviews', 'stat--info')}
-    ${statCard('Counties served', formatNumber(new Set(list.map((s) => s.county)).size), 'Coverage area', 'stat--info')}
-  </div>
-  <section class="card"><div class="card__head"><h2>My services</h2><a class="btn btn--outline btn--sm" href="services.html">Directory</a></div>
-    <div class="card__body">${list.map((s) => `
-      <div class="list-row">
-        <div class="list-row__main"><strong>${s.emoji} ${escapeHtml(s.name)}</strong><small>${escapeHtml(s.location)}, ${escapeHtml(s.county)} · ${formatKES(s.price)} per ${escapeHtml(s.unit)}</small></div>
-        <a class="btn btn--outline btn--sm" href="service-detail.html?id=${encodeURIComponent(s.id)}">View</a></div>`).join('')}
-      <p class="dash-note mt-4">Booking management, calendars and payouts require the backend. Listings and enquiries work in demo mode.</p>
-    </div></section>`;
-}
-
-async function adminSummary() {
-  const { data: m } = await adminService.metrics();
-  return `
-  <div class="dash-header"><div><h1>Platform overview</h1><p class="muted small">Administrator view (demo metrics).</p></div>
-    <a class="btn btn--primary" href="admin.html">Open admin console</a></div>
-  <div class="stat-grid">
-    ${statCard('Total users', formatNumber(m.users), 'All account types')}
-    ${statCard('Products', formatNumber(m.products), 'Live listings', 'stat--info')}
-    ${statCard('Orders', formatNumber(m.orders), 'All time', 'stat--gold')}
-    ${statCard('Revenue', formatKES(m.revenue), 'Paid orders', 'stat--info')}
-  </div>`;
-}
-
-/* ------------------------------------------------------------ BOOTSTRAP */
 export async function mountDashboard(forcedRole) {
   const { requireRole, requireUser } = await import('./guards.js');
-
-  // A role-specific dashboard enforces that role.
-  // dashboard.html (no forcedRole) just needs any signed-in user.
-  const user = forcedRole
-    ? await requireRole([forcedRole])
-    : await requireUser();
-
-  if (!user) return; // guard already redirected or rendered the blocked card
+  const user = forcedRole ? await requireRole([forcedRole]) : await requireUser();
+  if (!user) return;
 
   const root = qs('#dashRoot');
   const sideMount = qs('#dashSide');
@@ -272,24 +337,15 @@ export async function mountDashboard(forcedRole) {
   const file = location.pathname.split('/').pop();
 
   if (sideMount) sideMount.outerHTML = renderSidebar(user, file);
-  root.innerHTML = loadingState('Loading your dashboard…');
+  root.innerHTML = loadingState('Loading dashboard…');
 
-  const views = {
-    farmer: farmerView, buyer: buyerView, supplier: supplierView,
-    service: serviceView, rider: serviceView, admin: adminSummary
-  };
-  const view = views[role] || buyerView;
+  const views = { rider: riderView };
+  const view = views[role] || riderView;
 
   try {
     root.innerHTML = await view(user);
   } catch (err) {
     console.error('[dashboard]', err);
-    root.innerHTML = `<div class="card card--pad">
-      <div class="state state--error">
-        <div class="state__icon" aria-hidden="true">⛔</div>
-        <h3>Unable to load the dashboard</h3>
-        <p>${escapeHtml(err.message || 'Something went wrong.')}</p>
-        <button class="btn btn--outline mt-3" onclick="location.reload()">Reload</button>
-      </div></div>`;
+    root.innerHTML = `<div class="card card--pad"><p>Unable to load dashboard.</p></div>`;
   }
 }

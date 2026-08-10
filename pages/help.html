@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Help Center &amp; FAQ — SokoShamba</title>
+<meta name="description" content="Find answers to common questions about buying, selling, rider deliveries, payments, and farm tools on SokoShamba.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/forms.css"><link rel="stylesheet" href="../css/pages.css">
+<link rel="stylesheet" href="../css/responsive.css">
+<style>
+.faq-accordion { display: grid; gap: var(--sp-4); }
+.faq-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; transition: border-color var(--dur-fast); }
+.faq-item:hover { border-color: var(--green-600); }
+.faq-question { width: 100%; padding: 18px 20px; background: none; border: none; display: flex; justify-content: space-between; align-items: center; text-align: left; font-family: inherit; font-size: var(--fs-base); font-weight: 600; color: var(--ink-900); cursor: pointer; }
+.faq-question::after { content: '+'; font-size: 1.4rem; font-weight: 400; color: var(--green-700); margin-left: 12px; }
+.faq-item.open .faq-question::after { content: '−'; }
+.faq-answer { display: none; padding: 0 20px 18px; color: var(--ink-700); line-height: 1.6; border-top: 1px solid var(--border-light); padding-top: 14px; }
+.faq-item.open .faq-answer { display: block; }
+.help-category-btn { padding: 10px 18px; border-radius: var(--radius-pill); border: 1px solid var(--border); background: var(--surface); font-weight: 600; cursor: pointer; transition: all var(--dur-fast); }
+.help-category-btn.active, .help-category-btn:hover { background: var(--green-700); color: #fff; border-color: var(--green-700); }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div id="site-header"></div>
+<main id="main">
+  <section class="page-head">
+    <div class="container">
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href='/'>Home</a><span>/</span><span>Help Center</span></nav>
+      <h1>Help Center &amp; FAQ</h1>
+      <p>Answers to common questions about buying produce, farmer listings, rider deliveries, and M-Pesa payments.</p>
+    </div>
+  </section>
+
+  <div class="container" style="padding-block:var(--sp-6) var(--sp-8)">
+    <div class="search-box mb-6" style="max-width:600px;margin-inline:auto">
+      <input class="input" id="faqSearch" type="search" placeholder="🔍 Search help topics (e.g. M-Pesa, delivery, rider, refund, listings)…" style="padding:14px 18px;font-size:var(--fs-base)">
+    </div>
+
+    <div class="flex wrap gap-2 justify-center mb-6" id="faqFilters">
+      <button class="help-category-btn active" data-cat="all">All Topics</button>
+      <button class="help-category-btn" data-cat="buyers">🛒 Buyers &amp; Orders</button>
+      <button class="help-category-btn" data-cat="farmers">🧑‍🌾 Farmers &amp; Sellers</button>
+      <button class="help-category-btn" data-cat="riders">🚛 Riders &amp; Logistics</button>
+      <button class="help-category-btn" data-cat="payments">💳 Payments &amp; M-Pesa</button>
+      <button class="help-category-btn" data-cat="tools">🧮 Farm Tools</button>
+    </div>
+
+    <div class="faq-accordion" id="faqContainer">
+      <article class="faq-item" data-cat="buyers">
+        <button class="faq-question">How do I buy produce or inputs on SokoShamba?</button>
+        <div class="faq-answer">
+          Browse the <a href="/pages/marketplace.html">Marketplace</a>, filter by category or your county, select items, and add them to your cart. Proceed to checkout, enter your delivery address in Kenya, and pay securely via M-Pesa or card.
+        </div>
+      </article>
+
+      <article class="faq-item" data-cat="buyers">
+        <button class="faq-question">How does buyer payment escrow work?</button>
+        <div class="faq-answer">
+          When you pay, funds are held securely in escrow until you inspect and confirm receipt of your produce. Once you click "Yes, I received it", funds are released to the farmer and delivery rider. If there's an issue, you can tap "Dispute" to halt payout and request support.
+        </div>
+      </article>
+
+      <article class="faq-item" data-cat="farmers">
+        <button class="faq-question">How do I list my harvest for sale?</button>
+        <div class="faq-answer">
+          Sign up or log in as a <strong>Farmer</strong> or <strong>Supplier</strong>, go to <a href="/pages/sell.html">Sell a Product</a>, upload photos of your produce, set your price per unit (e.g. KES 4,200 per 90kg bag), specify available stock and location. Your listing is immediately visible to buyers across Kenya.
+        </div>
+      </article>
+
+      <article class="faq-item" data-cat="riders">
+        <button class="faq-question">How do transporters and boda boda riders get delivery jobs?</button>
+        <div class="faq-answer">
+          Register with a <strong>Rider / Transport</strong> account. Open your <a href="/pages/rider-dashboard.html">Rider Dashboard</a> to view available delivery jobs in your county. Each job displays the pickup farm location, buyer drop-off location, cargo weight, and your delivery payout.
+        </div>
+      </article>
+
+      <article class="faq-item" data-cat="payments">
+        <button class="faq-question">Which payment methods are supported?</button>
+        <div class="faq-answer">
+          We support <strong>M-Pesa STK Push</strong> (instant prompt on your Safaricom phone) and <strong>Debit/Credit cards</strong> (Visa, Mastercard) processed securely through Paystack.
+        </div>
+      </article>
+
+      <article class="faq-item" data-cat="tools">
+        <button class="faq-question">How does the Farm Cost Calculator work?</button>
+        <div class="faq-answer">
+          Our <a href="/pages/calculator.html">Farm Cost Calculator</a> allows you to select your crop, acreage, and input costs (seeds, fertilizer, labor, irrigation). It generates projected yields, expected gross revenue, total production cost, and your break-even selling price before you plant.
+        </div>
+      </article>
+    </div>
+
+    <div class="cta-band mt-8" style="background:var(--green-900);color:#fff;border-radius:var(--radius-lg);padding:var(--sp-6);text-align:center">
+      <h3 style="color:#fff;font-size:var(--fs-lg)">Still have questions?</h3>
+      <p style="color:#cfe6d9;max-width:500px;margin:10px auto 20px">Our agribusiness support team is ready to assist you via WhatsApp, phone, or email.</p>
+      <div class="flex wrap gap-3 justify-center">
+        <a class="btn btn--light btn--lg" href="https://wa.me/254740793959?text=Hi%20SokoShamba%20Support!%20I%20need%20help%20with%3A" target="_blank" rel="noopener">💚 Chat on WhatsApp</a>
+        <a class="btn btn--outline btn--lg" href="/pages/contact.html" style="color:#fff;border-color:rgba(255,255,255,.4)">Send Support Message</a>
+      </div>
+    </div>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script type="module" src="../js/app.js"></script>
+<script type="module">
+  import { qs, qsa } from '../js/ui.js';
+  
+  qsa('.faq-question').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      btn.closest('.faq-item').classList.toggle('open');
+    });
+  });
+
+  const filterBtns = qsa('#faqFilters button');
+  const items = qsa('.faq-item');
+  filterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      const cat = btn.dataset.cat;
+      items.forEach((item) => {
+        item.style.display = (cat === 'all' || item.dataset.cat === cat) ? 'block' : 'none';
+      });
+    });
+  });
+
+  qs('#faqSearch')?.addEventListener('input', (e) => {
+    const term = e.target.value.trim().toLowerCase();
+    items.forEach((item) => {
+      item.style.display = item.textContent.toLowerCase().includes(term) ? 'block' : 'none';
+    });
+  });
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Admin console — SokoShamba</title>
+<title>Admin Console — SokoShamba</title>
 <meta name="description" content="Platform administration console for users, products, orders, reports, categories and advisory content.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
@@ -19,18 +19,12 @@
 <main id="main">
   <section class="page-head">
     <div class="container">
-      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a><span>/</span><span>Admin</span></nav>
-      <h1>Admin console</h1>
-      <p>Platform metrics and management surfaces, ready for a secured backend.</p>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href='/'>Home</a><span>/</span><span>Admin</span></nav>
+      <h1>Admin Console</h1>
+      <p>Platform metrics, user moderation, order oversight, and marketplace management.</p>
     </div>
   </section>
   <div class="container" style="padding-block:var(--sp-5) var(--sp-8)">
-    <div class="alert alert--warn">
-      <span aria-hidden="true">🔐</span>
-      <div><strong>Authorization notice.</strong> This console is a UI shell only. Frontend role checks are not security.
-        Real admin authorization <strong>must</strong> be enforced server-side with Supabase Row Level Security policies
-        and an <code>is_admin</code> claim or an admin-only service role used exclusively inside edge functions.</div>
-    </div>
     <div id="adminRoot" aria-live="polite"></div>
   </div>
 </main>

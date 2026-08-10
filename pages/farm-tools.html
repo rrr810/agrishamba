@@ -3,11 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Farm tools — fertilizer, feed, yield &amp; planting calculators | SokoShamba</title>
-<meta name="description" content="Free Kenyan farm calculators: how much fertilizer to buy, livestock feed budgets, realistic yield estimates and planting calendars by county.">
-<meta property="og:title" content="Free Kenyan farm calculators — SokoShamba">
-<meta property="og:description" content="Fertilizer, feed, yield and planting calendar tools built for Kenyan farmers.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%9B%A0%3C/text%3E%3C/svg%3E">
+<title>Farm Tools &amp; Calculators — SokoShamba</title>
+<meta name="description" content="Agricultural planning tools, production cost calculators, crop calendars and advisory.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f5132'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css">
 <link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/components.css">
@@ -17,48 +15,41 @@
 <body data-nav="Farm Tools">
 <a class="skip-link" href="#main">Skip to main content</a>
 <div id="site-header"></div>
-
 <main id="main">
   <section class="page-head">
     <div class="container">
-      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a><span>/</span><span>Farm tools</span></nav>
-      <h1>🛠️ Farm tools</h1>
-      <p>Practical calculators built for Kenyan conditions. Free, instant, no sign-up needed.</p>
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href='/'>Home</a><span>/</span><span>Farm Tools</span></nav>
+      <h1>Farm Tools &amp; Calculators</h1>
+      <p>Data-driven tools to calculate crop profitability, model production costs, and track market prices.</p>
     </div>
   </section>
 
-  <div class="container" style="padding-block:var(--sp-5) var(--sp-8)">
+  <div class="container" style="padding-block:var(--sp-6) var(--sp-8)">
+    <div class="feature-grid">
+      <article class="feature card card--pad" style="border-top:4px solid var(--green-700)">
+        <div class="feature__icon" style="font-size:2.2rem">🧮</div>
+        <h2 style="font-size:var(--fs-md)">Farm Cost Calculator</h2>
+        <p class="mt-2">Model input costs (seeds, fertilizer, labor), expected yield, and calculate break-even selling prices per bag or kg.</p>
+        <div class="mt-4"><a class="btn btn--primary btn--block" href="/pages/calculator.html">Launch Calculator →</a></div>
+      </article>
 
-    <!-- Cross-links to the other tools -->
-    <div class="flex gap-2 wrap mb-4">
-      <a class="chip" href="calculator.html">🧮 Cost &amp; profit</a>
-      <a class="chip" href="start-farming.html">🌱 What should I grow?</a>
-      <a class="chip" href="market-prices.html">📈 Market prices</a>
-      <a class="chip" href="advisory.html">📚 Advisory guides</a>      <a class="chip" href="loan-calculator.html">💰 Loan calculator</a>
-    </div>
+      <article class="feature card card--pad" style="border-top:4px solid var(--green-600)">
+        <div class="feature__icon" style="font-size:2.2rem">🌱</div>
+        <h2 style="font-size:var(--fs-md)">Start Farming Advisor</h2>
+        <p class="mt-2">Answer 5 questions to receive a personalized crop recommendation, initial capital breakdown, and week-by-week calendar.</p>
+        <div class="mt-4"><a class="btn btn--primary btn--block" href="/pages/start-farming.html">Get Free Plan →</a></div>
+      </article>
 
-    <!-- Tool tabs -->
-    <div class="chips mb-5" id="toolTabs" role="group" aria-label="Choose a tool"></div>
-
-    <!-- Active tool renders here -->
-    <div id="toolPanel" aria-live="polite"></div>
-
-    <!-- Bottom CTA -->
-    <div class="cta-band mt-7">
-      <h2>Need the inputs?</h2>
-      <p>Buy seed, fertilizer, feed and equipment from verified sellers across Kenya — or ask us anything on WhatsApp.</p>
-      <div class="hero__cta" style="justify-content:center">
-        <a class="btn btn--light btn--lg" href="marketplace.html">🛒 Shop the marketplace</a>
-        <a class="btn btn--outline btn--lg" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.4)"
-           href="https://wa.me/254740793959?text=Hi%20SokoShamba!%20I%20used%20the%20farm%20tools%20and%20have%20a%20question:"
-           target="_blank" rel="noopener">💬 Ask a question</a>
-      </div>
+      <article class="feature card card--pad" style="border-top:4px solid var(--gold-600)">
+        <div class="feature__icon" style="font-size:2.2rem">📈</div>
+        <h2 style="font-size:var(--fs-md)">Market Prices Tracker</h2>
+        <p class="mt-2">Reference commodity wholesale and retail prices across major Kenyan markets (Wakulima, Eldoret, Kisumu, Nakuru, Kongowea).</p>
+        <div class="mt-4"><a class="btn btn--primary btn--block" href="/pages/market-prices.html">View Prices →</a></div>
+      </article>
     </div>
   </div>
 </main>
-
 <div id="site-footer"></div>
 <script type="module" src="../js/app.js"></script>
-<script type="module" src="../js/farm-tools.js"></script>
 </body>
 </html>

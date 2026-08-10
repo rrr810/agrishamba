@@ -5,7 +5,6 @@ import { rules, validateForm, liveValidate, setFieldError, normalizePhone } from
 import { qs, qsa, toast, setButtonLoading, escapeHtml, getParam, page } from '../ui.js';
 import { COUNTIES, ACCOUNT_TYPES, isDemo } from '../config.js';
 
-// Hydrate auth state on page load
 auth.hydrate();
 
 /* In production mode, hide demo-only helpers on the login page. */
@@ -49,6 +48,7 @@ function wireStrength(inputId = 'password') {
 function redirectForUser(user) {
   const next = getParam('next');
   if (next) return next;
+  const role = user?.accountType || 'buyer';
   const map = {
     farmer: 'farmer-dashboard.html',
     buyer: 'buyer-dashboard.html',
@@ -57,7 +57,7 @@ function redirectForUser(user) {
     rider: 'rider-dashboard.html',
     admin: 'admin.html'
   };
-  return map[user.accountType] || 'dashboard.html';
+  return map[role] || 'dashboard.html';
 }
 
 /* -------------------------------------------------------------- LOGIN */
@@ -73,7 +73,7 @@ if (loginForm) {
       chip.classList.remove('active');
       if (error) return toast(error.message, 'error');
       toast(`Signed in as ${data.fullName} (demo).`, 'success');
-      setTimeout(() => { location.href = redirectForUser(data); }, 600);
+      setTimeout(() => { location.href = redirectForUser(data); }, 500);
     });
   });
 
@@ -84,12 +84,24 @@ if (loginForm) {
     if (!valid) return;
     const btn = loginForm.querySelector('button[type="submit"]');
     setButtonLoading(btn, true, 'Signing in…');
-    const { data, error } = await auth.login({ email: values.email, password: values.password });
-    setButtonLoading(btn, false);
-    if (error) return alertBox('error', escapeHtml(error.message));
-    alertBox('success', `Welcome back, ${escapeHtml(data.fullName.split(' ')[0])}. Redirecting…`);
-    toast('Logged in successfully.', 'success');
-    setTimeout(() => { location.href = redirectForUser(data); }, 700);
+    
+    try {
+      const { data, error } = await auth.login({ email: values.email, password: values.password });
+      setButtonLoading(btn, false);
+      if (error) return alertBox('error', escapeHtml(error.message));
+      
+      const displayName = data?.fullName || data?.email || 'User';
+      const firstName = String(displayName).split(' ')[0] || 'User';
+      
+      alertBox('success', `Welcome back, ${escapeHtml(firstName)}. Redirecting…`);
+      toast('Logged in successfully.', 'success');
+      
+      const target = redirectForUser(data);
+      setTimeout(() => { location.href = target; }, 600);
+    } catch (err) {
+      setButtonLoading(btn, false);
+      alertBox('error', escapeHtml(err.message || 'Login failed. Please check your credentials.'));
+    }
   });
 }
 
@@ -157,7 +169,6 @@ if (registerForm) {
 /* ------------------------------------------------------ FORGOT / RESET */
 const forgotForm = qs('#forgotForm');
 if (forgotForm) {
-  // Clear any existing session so the user is clean for forgot-password
   store.clearUser();
 
   const schema = { email: [rules.required, rules.email] };
@@ -184,7 +195,6 @@ if (resetForm) {
   const schema = { password: [rules.required, rules.password], confirmPassword: [rules.required] };
   liveValidate(resetForm, schema);
 
-  // Check on load if we have a valid token from email
   const hasTokenInHash = window.location.hash && window.location.hash.includes('access_token');
   const hasCodeParam = window.location.search && window.location.search.includes('code');
   const warningBox = qs('#tokenWarning');
