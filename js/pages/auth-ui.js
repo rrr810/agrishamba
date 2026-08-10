@@ -5,17 +5,21 @@ import { rules, validateForm, liveValidate, setFieldError, normalizePhone } from
 import { qs, qsa, toast, setButtonLoading, escapeHtml, getParam, page } from '../ui.js';
 import { COUNTIES, ACCOUNT_TYPES, isDemo } from '../config.js';
 
+// Hydrate auth state on page load
+auth.hydrate();
+
 /* In production mode, hide demo-only helpers on the login page. */
 if (!isDemo()) {
-  qs('#loginForm')?.previousElementSibling?.remove?.(); // "Demo mode" chips row
-  const alertBox = qs('#loginForm')?.parentElement?.querySelector('.alert--info');
-  alertBox?.remove();
+  qs('#loginForm')?.previousElementSibling?.remove?.();
+  const alertBoxEl = qs('#loginForm')?.parentElement?.querySelector('.alert--info');
+  alertBoxEl?.remove();
 }
 
 /* ------------------------------------------------- shared interactions */
 qsa('[data-toggle-password]').forEach((btn) => {
   btn.addEventListener('click', () => {
     const input = document.getElementById(btn.dataset.togglePassword);
+    if (!input) return;
     const show = input.type === 'password';
     input.type = show ? 'text' : 'password';
     btn.textContent = show ? '🙈' : '👁';
@@ -46,8 +50,12 @@ function redirectForUser(user) {
   const next = getParam('next');
   if (next) return next;
   const map = {
-    farmer: 'farmer-dashboard.html', buyer: 'buyer-dashboard.html',
-    supplier: 'supplier-dashboard.html', service: 'service-dashboard.html', admin: 'admin.html'
+    farmer: 'farmer-dashboard.html',
+    buyer: 'buyer-dashboard.html',
+    supplier: 'supplier-dashboard.html',
+    service: 'service-dashboard.html',
+    rider: 'rider-dashboard.html',
+    admin: 'admin.html'
   };
   return map[user.accountType] || 'dashboard.html';
 }
@@ -88,17 +96,20 @@ if (loginForm) {
 /* ----------------------------------------------------------- REGISTER */
 const registerForm = qs('#registerForm');
 if (registerForm) {
-  // account type cards
   const wrap = qs('#accountTypes');
   const preset = getParam('type');
-  wrap.innerHTML = ACCOUNT_TYPES.map((t) => `
-    <label class="choice">
-      <input type="radio" name="accountType" value="${t.id}" ${preset === t.id ? 'checked' : ''}>
-      <span><span class="choice__title">${t.label}</span><span class="choice__desc">${t.desc}</span></span>
-    </label>`).join('');
+  if (wrap) {
+    wrap.innerHTML = ACCOUNT_TYPES.map((t) => `
+      <label class="choice">
+        <input type="radio" name="accountType" value="${t.id}" ${preset === t.id ? 'checked' : ''}>
+        <span><span class="choice__title">${t.label}</span><span class="choice__desc">${t.desc}</span></span>
+      </label>`).join('');
+  }
 
   const countySelect = qs('#county');
-  countySelect.insertAdjacentHTML('beforeend', COUNTIES.map((c) => `<option>${c}</option>`).join(''));
+  if (countySelect) {
+    countySelect.insertAdjacentHTML('beforeend', COUNTIES.map((c) => `<option>${c}</option>`).join(''));
+  }
 
   wireStrength('password');
 
@@ -150,15 +161,23 @@ if (forgotForm) {
   liveValidate(forgotForm, schema);
   forgotForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearAlert();
     const { valid, values } = validateForm(forgotForm, schema);
     if (!valid) return;
     const btn = forgotForm.querySelector('button[type="submit"]');
     setButtonLoading(btn, true, 'Sending…');
-    const { error } = await auth.resetPassword(values.email);
+    const { data, error } = await auth.resetPassword(values.email);
     setButtonLoading(btn, false);
     if (error) return alertBox('error', escapeHtml(error.message));
     forgotForm.hidden = true;
-    qs('#forgotSuccess').hidden = false;
+    const successBox = qs('#forgotSuccess');
+    if (successBox) {
+      successBox.hidden = false;
+      const link = successBox.querySelector('#directResetLink');
+      if (link && data?.resetUrl) {
+        link.href = data.resetUrl;
+      }
+    }
   });
 }
 
@@ -167,8 +186,10 @@ if (resetForm) {
   wireStrength('password');
   const schema = { password: [rules.required, rules.password], confirmPassword: [rules.required] };
   liveValidate(resetForm, schema);
+
   resetForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearAlert();
     const { valid, values } = validateForm(resetForm, schema);
     if (!valid) return;
     if (values.password !== values.confirmPassword) {
@@ -176,12 +197,18 @@ if (resetForm) {
     }
     const btn = resetForm.querySelector('button[type="submit"]');
     setButtonLoading(btn, true, 'Updating…');
-    const { error } = await auth.updatePassword(values.password);
-    setButtonLoading(btn, false);
-    if (error) return alertBox('error', escapeHtml(error.message));
-    alertBox('success', 'Password updated. You can now log in with your new password.');
-    toast('Password updated (demo).', 'success');
-    setTimeout(() => { location.href = 'login.html'; }, 1200);
+    
+    try {
+      const { data, error } = await auth.updatePassword(values.password);
+      setButtonLoading(btn, false);
+      if (error) return alertBox('error', escapeHtml(error.message));
+      alertBox('success', 'Password updated successfully! Redirecting to login…');
+      toast('Password updated successfully! 🎉', 'success');
+      setTimeout(() => { location.href = 'login.html'; }, 1500);
+    } catch (err) {
+      setButtonLoading(btn, false);
+      alertBox('error', escapeHtml(err.message || 'Could not update password. Please try again.'));
+    }
   });
 }
 
@@ -196,6 +223,6 @@ if (resendBtn) {
     const { error } = await auth.resendVerification(user?.email || '');
     setButtonLoading(resendBtn, false);
     if (error) return toast(error.message, 'error');
-    toast('Verification email queued (demo mode — nothing was sent).', 'info');
+    toast('Verification email sent.', 'info');
   });
 }

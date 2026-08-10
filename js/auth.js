@@ -46,6 +46,8 @@ function prettyErr(err) {
     return 'Please choose a password with at least 8 characters.';
   if (/rate limit|too many/i.test(msg))
     return 'Too many attempts. Please wait a moment and try again.';
+  if (/session.*missing|auth session missing|jwt|token expired/i.test(msg))
+    return 'Reset link has expired or is invalid. Please request a new link from the Forgot Password page.';
   return msg;
 }
 
@@ -75,11 +77,23 @@ async function _doHydrate() {
   const sb = await getSupabase();
   if (!sb) return null;
   try {
+    // Handle PKCE code exchange if present in URL
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+      try {
+        await sb.auth.exchangeCodeForSession(code);
+      } catch (err) {
+        console.warn('[auth.hydrate] PKCE exchange warning:', err);
+      }
+    }
+
     const { data: { session } } = await sb.auth.getSession();
     if (session?.user) await syncProfileFromAuth(sb, session.user);
+
     sb.auth.onAuthStateChange(async (event, sess) => {
       if (event === 'SIGNED_OUT') { store.clearUser(); return; }
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' || event === 'PASSWORD_RECOVERY') {
         if (sess?.user) await syncProfileFromAuth(sb, sess.user);
       }
     });
@@ -90,7 +104,6 @@ async function _doHydrate() {
 }
 
 function verifyRedirect() {
-  // Absolute URL so Supabase redirects back correctly
   const origin = window.location.origin;
   const inPages = window.location.pathname.includes('/pages/');
   const base = inPages
@@ -182,7 +195,6 @@ export const auth = {
     });
     if (error) return fail(prettyErr(error));
 
-    // If email confirmation is disabled, session exists → sign the user in.
     if (data.session) {
       const profile = await syncProfileFromAuth(sb, data.user);
       return ok(profile || {
@@ -190,7 +202,6 @@ export const auth = {
         fullName: fullName.trim(), accountType
       });
     }
-    // Otherwise the user must click the email link first.
     return ok({
       id: data.user?.id, email: email.trim().toLowerCase(),
       fullName: fullName.trim(), accountType, needsVerification: true
@@ -241,6 +252,7 @@ export const auth = {
     }
   },
 
+  /* -------------------------------------------------- UPDATE PASSWORD */
   async updatePassword(newPassword) {
     if (!newPassword || newPassword.length < 8)
       return fail('Choose a password with at least 8 characters.');
@@ -251,18 +263,23 @@ export const auth = {
     }
 
     const sb = await getSupabase();
-    if (!sb) return ok({ updated: true, local: true });
+    if (!sb) return fail('Authentication service unreachable.');
 
     try {
-      const { error } = await sb.auth.updateUser({ password: newPassword });
-      if (error) {
-        console.warn('[auth.updatePassword] Supabase update warning:', error.message);
-        return ok({ updated: true, fallback: true });
+      // 10-second timeout to prevent infinite hanging
+      const updatePromise = sb.auth.updateUser({ password: newPassword });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out. Please check your internet connection and try again.')), 10000)
+      );
+
+      const res = await Promise.race([updatePromise, timeoutPromise]);
+      if (res?.error) {
+        return fail(prettyErr(res.error));
       }
-      return ok({ updated: true });
+      return ok({ updated: true, data: res?.data });
     } catch (err) {
       console.warn('[auth.updatePassword] error:', err);
-      return ok({ updated: true, fallback: true });
+      return fail(prettyErr(err));
     }
   },
 
