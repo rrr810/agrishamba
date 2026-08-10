@@ -1,10 +1,5 @@
 /**
  * auth.js — Authentication abstraction.
- *   Demo mode      → localStorage-only simulation (no passwords stored).
- *   Production mode → Supabase Auth (email + password).
- *
- * Every consumer only uses auth.login/register/logout/resetPassword/etc.
- * — the branching stays here.
  */
 import { isDemo } from './config.js';
 import { store } from './state.js';
@@ -12,11 +7,10 @@ import { KEYS, read, write } from './storage.js';
 import { demoUsers } from '../data/demo-data.js';
 import { getSupabase } from './supabase-client.js';
 
-const latency = (ms = 700) => new Promise((r) => setTimeout(r, ms));
+const latency = (ms = 500) => new Promise((r) => setTimeout(r, ms));
 const ok = (data) => ({ data, error: null });
 const fail = (message) => ({ data: null, error: { message } });
 
-/* ------------------------------------------------------------ mappers */
 function mapProfile(row) {
   return {
     id: row.id,
@@ -46,12 +40,11 @@ function prettyErr(err) {
     return 'Please choose a password with at least 8 characters.';
   if (/rate limit|too many/i.test(msg))
     return 'Too many attempts. Please wait a moment and try again.';
-  if (/session.*missing|auth session missing|jwt|token expired/i.test(msg))
+  if (/session.*missing|auth session missing|jwt|token expired|no_authorization/i.test(msg))
     return 'Reset link has expired or is invalid. Please request a new link from the Forgot Password page.';
   return msg;
 }
 
-/* ---------------------------------------------------- demo-only registry */
 function registry() {
   const stored = read(KEYS.users, null);
   if (stored) return stored;
@@ -59,7 +52,6 @@ function registry() {
   return demoUsers;
 }
 
-/* ------------------------------------------- hydrate the session on boot */
 let hydratePromise = null;
 
 async function syncProfileFromAuth(sb, authUser) {
@@ -77,15 +69,21 @@ async function _doHydrate() {
   const sb = await getSupabase();
   if (!sb) return null;
   try {
-    // Handle PKCE code exchange if present in URL
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (code) {
+      try { await sb.auth.exchangeCodeForSession(code); } catch (err) { console.warn('[auth.hydrate] PKCE note:', err); }
+    }
+
+    if (window.location.hash && window.location.hash.includes('access_token')) {
       try {
-        await sb.auth.exchangeCodeForSession(code);
-      } catch (err) {
-        console.warn('[auth.hydrate] PKCE exchange warning:', err);
-      }
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        if (accessToken && refreshToken) {
+          await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        }
+      } catch (err) { console.warn('[auth.hydrate] Hash session note:', err); }
     }
 
     const { data: { session } } = await sb.auth.getSession();
@@ -93,37 +91,28 @@ async function _doHydrate() {
 
     sb.auth.onAuthStateChange(async (event, sess) => {
       if (event === 'SIGNED_OUT') { store.clearUser(); return; }
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' || event === 'PASSWORD_RECOVERY') {
+      if (['SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED', 'PASSWORD_RECOVERY'].includes(event)) {
         if (sess?.user) await syncProfileFromAuth(sb, sess.user);
       }
     });
-  } catch (e) {
-    console.warn('[auth.hydrate] failed:', e);
-  }
+  } catch (e) { console.warn('[auth.hydrate] failed:', e); }
   return null;
 }
 
 function verifyRedirect() {
   const origin = window.location.origin;
   const inPages = window.location.pathname.includes('/pages/');
-  const base = inPages
-    ? window.location.pathname.replace(/\/pages\/.*$/, '/pages/')
-    : '/pages/';
+  const base = inPages ? window.location.pathname.replace(/\/pages\/.*$/, '/pages/') : '/pages/';
   return origin + base;
 }
 
-/* ============================================================== EXPORT */
 export const auth = {
-  /** Kick off (or return) the Supabase session hydration. Idempotent. */
   hydrate() { if (!hydratePromise) hydratePromise = _doHydrate(); return hydratePromise; },
-
-  /** Await this before any code that depends on store.getUser() being correct. */
   ready() { if (!hydratePromise) hydratePromise = _doHydrate(); return hydratePromise; },
 
   getCurrentUser() { return store.getUser(); },
   isAuthenticated() { return Boolean(store.getUser()); },
 
-  /* ----------------------------------------------------------- LOGIN */
   async login({ email, password }) {
     if (!email || !password) return fail('Enter your email and password.');
     if (isDemo()) {
@@ -135,80 +124,50 @@ export const auth = {
       return ok(user);
     }
     const sb = await getSupabase();
-    if (!sb) return fail('Cannot reach the authentication service. Check your internet connection.');
-    const { data, error } = await sb.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password
-    });
+    if (!sb) return fail('Cannot reach authentication service. Check your internet connection.');
+    const { data, error } = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     if (error) return fail(prettyErr(error));
     const profile = await syncProfileFromAuth(sb, data.user);
-    return ok(profile || {
-      id: data.user.id, email: data.user.email,
-      fullName: data.user.email, accountType: 'buyer'
-    });
+    return ok(profile || { id: data.user.id, email: data.user.email, fullName: data.user.email, accountType: 'buyer' });
   },
 
-  /* -------------------------------------------------------- REGISTER */
   async register(payload) {
     const { fullName, email, phone, password, accountType } = payload;
-    if (!fullName || !email || !phone || !password || !accountType)
-      return fail('All fields are required.');
+    if (!fullName || !email || !phone || !password || !accountType) return fail('All fields are required.');
 
     if (isDemo()) {
-      await latency(900);
+      await latency(600);
       const users = registry();
       if (users.some((u) => u.email.toLowerCase() === email.trim().toLowerCase()))
         return fail('An account with this email already exists. Try logging in.');
       const user = {
-        id: 'usr-' + Date.now(),
-        fullName: fullName.trim(), email: email.trim().toLowerCase(),
-        phone: phone.trim(), accountType,
-        county: payload.county || '', location: payload.location || '',
-        verified: false, avatar: '', bio: '',
-        joined: new Date().toISOString().slice(0, 10),
-        rating: 0, emailVerified: false
+        id: 'usr-' + Date.now(), fullName: fullName.trim(), email: email.trim().toLowerCase(),
+        phone: phone.trim(), accountType, county: payload.county || '', location: payload.location || '',
+        verified: false, avatar: '', bio: '', joined: new Date().toISOString().slice(0, 10), rating: 0, emailVerified: false
       };
       write(KEYS.users, [...users, user]);
       store.setUser(user);
-      store.pushNotification({
-        type: 'system', title: 'Welcome to SokoShamba',
-        body: `Your ${accountType} account was created in demo mode.`
-      });
       return ok(user);
     }
 
     const sb = await getSupabase();
-    if (!sb) return fail('Cannot reach the authentication service. Check your internet connection.');
+    if (!sb) return fail('Cannot reach authentication service. Check your internet connection.');
     const { data, error } = await sb.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
       options: {
-        data: {
-          full_name: fullName.trim(),
-          phone: phone.trim(),
-          account_type: accountType,
-          county: payload.county || '',
-          location: payload.location || ''
-        },
+        data: { full_name: fullName.trim(), phone: phone.trim(), account_type: accountType, county: payload.county || '', location: payload.location || '' },
         emailRedirectTo: verifyRedirect() + 'verify-email.html'
       }
     });
     if (error) return fail(prettyErr(error));
-
     if (data.session) {
       const profile = await syncProfileFromAuth(sb, data.user);
-      return ok(profile || {
-        id: data.user.id, email: data.user.email,
-        fullName: fullName.trim(), accountType
-      });
+      return ok(profile || { id: data.user.id, email: data.user.email, fullName: fullName.trim(), accountType });
     }
-    return ok({
-      id: data.user?.id, email: email.trim().toLowerCase(),
-      fullName: fullName.trim(), accountType, needsVerification: true
-    });
+    return ok({ id: data.user?.id, email: email.trim().toLowerCase(), fullName: fullName.trim(), accountType, needsVerification: true });
   },
 
-  /* ---------------------------------------------------------- LOGOUT */
   async logout() {
     if (isDemo()) { await latency(200); store.clearUser(); return ok(true); }
     const sb = await getSupabase();
@@ -217,68 +176,56 @@ export const auth = {
     return ok(true);
   },
 
-  /* -------------------------------------------------- RESET PASSWORD */
   async resetPassword(email) {
     if (!email) return fail('Enter the email linked to your account.');
     const targetEmail = email.trim().toLowerCase();
 
     if (isDemo()) {
       await latency(500);
-      store.pushNotification({
-        type: 'system',
-        title: 'Password reset link sent',
-        body: `Password reset link generated for ${targetEmail}. Click to set a new password.`
-      });
       return ok({ sent: true, demo: true, resetUrl: `reset-password.html?email=${encodeURIComponent(targetEmail)}` });
     }
 
     const sb = await getSupabase();
-    if (!sb) {
-      return ok({ sent: true, fallback: true, resetUrl: `reset-password.html?email=${encodeURIComponent(targetEmail)}` });
-    }
+    if (!sb) return ok({ sent: true, fallback: true, resetUrl: `reset-password.html?email=${encodeURIComponent(targetEmail)}` });
 
     try {
-      const { error } = await sb.auth.resetPasswordForEmail(targetEmail, {
-        redirectTo: verifyRedirect() + 'reset-password.html'
-      });
-      if (error) {
-        console.warn('[auth.resetPassword] Supabase note:', error.message);
-        return ok({ sent: true, fallback: true, resetUrl: `reset-password.html?email=${encodeURIComponent(targetEmail)}` });
-      }
+      const { error } = await sb.auth.resetPasswordForEmail(targetEmail, { redirectTo: verifyRedirect() + 'reset-password.html' });
+      if (error) return ok({ sent: true, fallback: true, resetUrl: `reset-password.html?email=${encodeURIComponent(targetEmail)}` });
       return ok({ sent: true, resetUrl: `reset-password.html?email=${encodeURIComponent(targetEmail)}` });
     } catch (err) {
-      console.warn('[auth.resetPassword] error:', err);
       return ok({ sent: true, fallback: true, resetUrl: `reset-password.html?email=${encodeURIComponent(targetEmail)}` });
     }
   },
 
-  /* -------------------------------------------------- UPDATE PASSWORD */
   async updatePassword(newPassword) {
-    if (!newPassword || newPassword.length < 8)
-      return fail('Choose a password with at least 8 characters.');
-
-    if (isDemo()) {
-      await latency(500);
-      return ok({ updated: true, demo: true });
-    }
+    if (!newPassword || newPassword.length < 8) return fail('Choose a password with at least 8 characters.');
+    if (isDemo()) { await latency(500); return ok({ updated: true, demo: true }); }
 
     const sb = await getSupabase();
     if (!sb) return fail('Authentication service unreachable.');
 
     try {
-      // 10-second timeout to prevent infinite hanging
-      const updatePromise = sb.auth.updateUser({ password: newPassword });
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timed out. Please check your internet connection and try again.')), 10000)
-      );
-
-      const res = await Promise.race([updatePromise, timeoutPromise]);
-      if (res?.error) {
-        return fail(prettyErr(res.error));
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) {
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          if (accessToken && refreshToken) {
+            await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          }
+        }
       }
-      return ok({ updated: true, data: res?.data });
+
+      const { data: { session: activeSession } } = await sb.auth.getSession();
+      if (!activeSession) {
+        return fail('No active reset session found. Please open the link sent to your email, or request a new one from Forgot Password.');
+      }
+
+      const { data, error } = await sb.auth.updateUser({ password: newPassword });
+      if (error) return fail(prettyErr(error));
+      return ok({ updated: true, data });
     } catch (err) {
-      console.warn('[auth.updatePassword] error:', err);
       return fail(prettyErr(err));
     }
   },
@@ -286,7 +233,7 @@ export const auth = {
   async resendVerification(email) {
     if (isDemo()) { await latency(600); return ok({ sent: true, demo: true }); }
     const sb = await getSupabase();
-    if (!sb) return fail('Cannot reach the authentication service.');
+    if (!sb) return fail('Cannot reach authentication service.');
     const target = (email || store.getUser()?.email || '').trim().toLowerCase();
     if (!target) return fail('Enter your email address to receive a new link.');
     const { error } = await sb.auth.resend({ type: 'signup', email: target });
@@ -294,13 +241,11 @@ export const auth = {
     return ok({ sent: true });
   },
 
-  /* ----------------------------- Demo persona quick-sign-in (demo only) */
   async loginAsDemo(accountType) {
-    if (!isDemo())
-      return fail('Demo personas are only available in demo mode. Register a real account instead.');
+    if (!isDemo()) return fail('Demo personas are only available in demo mode. Register a real account instead.');
     const user = registry().find((u) => u.accountType === accountType);
     if (!user) return fail('Demo account unavailable.');
-    await latency(400);
+    await latency(300);
     store.setUser(user);
     return ok(user);
   },
@@ -315,5 +260,5 @@ export const auth = {
     return { score, label: labels[score] };
   }
 };
-
+a
 export default auth;
