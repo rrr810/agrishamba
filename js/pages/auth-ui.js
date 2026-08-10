@@ -4,16 +4,18 @@ import { store } from '../state.js';
 import { rules, validateForm, liveValidate, setFieldError, normalizePhone } from '../validation.js';
 import { qs, qsa, toast, setButtonLoading, escapeHtml, getParam, page } from '../ui.js';
 import { COUNTIES, ACCOUNT_TYPES, isDemo } from '../config.js';
-import { getSupabase } from '../supabase-client.js';
 
+// Hydrate auth state on page load
 auth.hydrate();
 
+/* In production mode, hide demo-only helpers on the login page. */
 if (!isDemo()) {
   qs('#loginForm')?.previousElementSibling?.remove?.();
   const alertBoxEl = qs('#loginForm')?.parentElement?.querySelector('.alert--info');
   alertBoxEl?.remove();
 }
 
+/* ------------------------------------------------- shared interactions */
 qsa('[data-toggle-password]').forEach((btn) => {
   btn.addEventListener('click', () => {
     const input = document.getElementById(btn.dataset.togglePassword);
@@ -58,6 +60,7 @@ function redirectForUser(user) {
   return map[user.accountType] || 'dashboard.html';
 }
 
+/* -------------------------------------------------------------- LOGIN */
 const loginForm = qs('#loginForm');
 if (loginForm) {
   const schema = { email: [rules.required, rules.email], password: [rules.required, rules.loginPassword] };
@@ -90,6 +93,7 @@ if (loginForm) {
   });
 }
 
+/* ----------------------------------------------------------- REGISTER */
 const registerForm = qs('#registerForm');
 if (registerForm) {
   const wrap = qs('#accountTypes');
@@ -150,8 +154,12 @@ if (registerForm) {
   });
 }
 
+/* ------------------------------------------------------ FORGOT / RESET */
 const forgotForm = qs('#forgotForm');
 if (forgotForm) {
+  // Clear any existing session so the user is clean for forgot-password
+  store.clearUser();
+
   const schema = { email: [rules.required, rules.email] };
   liveValidate(forgotForm, schema);
   forgotForm.addEventListener('submit', async (e) => {
@@ -166,13 +174,7 @@ if (forgotForm) {
     if (error) return alertBox('error', escapeHtml(error.message));
     forgotForm.hidden = true;
     const successBox = qs('#forgotSuccess');
-    if (successBox) {
-      successBox.hidden = false;
-      const link = successBox.querySelector('#directResetLink');
-      if (link && data?.resetUrl) {
-        link.href = data.resetUrl;
-      }
-    }
+    if (successBox) successBox.hidden = false;
   });
 }
 
@@ -182,29 +184,16 @@ if (resetForm) {
   const schema = { password: [rules.required, rules.password], confirmPassword: [rules.required] };
   liveValidate(resetForm, schema);
 
-  (async () => {
-    const hasHashToken = window.location.hash && window.location.hash.includes('access_token');
-    const hasCodeParam = window.location.search && window.location.search.includes('code');
-    const sb = await getSupabase();
-    let session = null;
-    if (sb) {
-      const res = await sb.auth.getSession();
-      session = res.data?.session;
-    }
+  // Check on load if we have a valid token from email
+  const hasTokenInHash = window.location.hash && window.location.hash.includes('access_token');
+  const hasCodeParam = window.location.search && window.location.search.includes('code');
+  const warningBox = qs('#tokenWarning');
 
-    const warningBox = qs('#tokenWarning');
-    const warningText = qs('#tokenWarningText');
-
-    if (!hasHashToken && !hasCodeParam && !session) {
-      if (warningBox && warningText) {
-        warningBox.className = 'alert alert--warn mb-4';
-        warningBox.hidden = false;
-        warningText.innerHTML = `No active password recovery link detected. If your link expired, please <a href="forgot-password.html"><strong>request a new reset link</strong></a>.`;
-      }
-    } else {
-      if (warningBox) warningBox.hidden = true;
-    }
-  })();
+  if (!hasTokenInHash && !hasCodeParam && !isDemo()) {
+    if (warningBox) warningBox.hidden = false;
+  } else {
+    if (warningBox) warningBox.hidden = true;
+  }
 
   resetForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -225,7 +214,7 @@ if (resetForm) {
       store.clearUser();
       alertBox('success', 'Password updated successfully! Taking you to login…');
       toast('Password updated successfully! 🎉', 'success');
-      setTimeout(() => { location.href = 'login.html'; }, 1400);
+      setTimeout(() => { location.href = 'login.html'; }, 1200);
     } catch (err) {
       setButtonLoading(btn, false);
       alertBox('error', escapeHtml(err.message || 'Could not update password. Please try again.'));
@@ -233,6 +222,7 @@ if (resetForm) {
   });
 }
 
+/* ------------------------------------------------------- VERIFY EMAIL */
 const resendBtn = qs('#resendBtn');
 if (resendBtn) {
   const user = store.getUser();
